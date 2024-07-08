@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creative Idea</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Your CSS styles here */
+        .text-green-600 { color: #047857; }
+        .text-green-900 { color: #065F46; }
+        .text-zinc-600 { color: #4B5563; }
+        .text-zinc-700 { color: #374151; }
+        .text-zinc-900 { color: #111827; }
+        .bg-yellow-500 { background-color: #F59E0B; }
+        .hover\:bg-yellow-600:hover { background-color: #D97706; }  
+        .rounded-full { border-radius: 9999px; }
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-image: url('https://images.pexels.com/photos/6373139/pexels-photo-6373139.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .outer-container {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 5rem; /* Increased padding for more space */
+            border-radius: 1rem;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            max-width: 90%; /* Adjusted max-width to 90% of viewport width */
+        }
+        .inner-container {
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3); /* Added shadow to the inner container */
+        }
+    </style>
+</head>
+<body>
+    <div class="outer-container">
+        <div class="bg-white rounded-lg overflow-hidden w-100">
+                <div class="d-flex flex-column flex-md-row">
+                    <div class="p-5 p-md-8 w-100 w-md-50">
+                        <h1 class="mt-4 display-5 text-green-800 font-weight-bold">Post-traumatic Detection Using Audio And Video Analysis</h1>
+
+                        <p class="mt-4 text-zinc-600">
+                            "Taking care of your mental health is an act of self-love"
+                        </p>
+                        <a href="" class="btn bg-yellow-500 text-white py-2 px-5 ml-1 rounded-full hover:bg-yellow-600">
+                            Learn More
+                        </a>
+                        <a href="{{ url_for('login') }}" class="btn bg-yellow-500 text-white py-2 px-5 ml-4 rounded-full hover:bg-yellow-600">
+                            Get Started
+                        </a>
+                    </div>
+                    <div class="w-100 w-md-50">
+                        <img
+                            src="https://digitalsalutem.com/wp-content/uploads/2024/05/mental-wellbeing.jpg"
+                            alt="Illustration of people working on a creative idea"
+                            class="w-100 h-100 object-cover"
+                        />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+        .container {
+            display: flex;
+            align-items: stretch;
+            justify-content: center;
+            max-width: 1200px;
+            height: 100%;
+            height: 600px;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(7, 7, 7, 0.1);
+            overflow: hidden;
+        }
+        .image-column {
+            background-color: #6eda3c;
+            color: #ffffff;
+            justify-content: center;
+            align-items: center;
+            padding: 5rem;
+        }
+        .image-column img {
+            max-width:98%;
+            height: auto;
+            border-radius: 0 0 0 12px;
+        }
+        .form-column {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+        .login-form {
+            max-width: 440px;
+            width: 100%;
+            padding: 3.5rem;
+            border-radius: 12px;
+            background-color: #ffffff;
+            box-shadow: 0 0 15px rgba(5, 5, 5, 0.1);
+        }
+        .form-label {
+            font-weight: bold;
+        }
+        .form-check-label {
+            font-weight: normal;
+        }
+        .btn-primary, .btn-secondary {
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .btn-primary:hover {
+            background-color: #0069d9;
+            border-color: #0062cc;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+            border-color: #545b62;
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                height: auto;
+            }
+            .image-column, .form-column {
+                flex: none;
+                width: 100%;
+                padding: 2rem;
+            }
+            .image-column {
+                display: none;
+            }
+            .login-form {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="image-column col-md-6 d-none d-md-flex">
+            <img src="https://static.vecteezy.com/system/resources/thumbnails/007/033/146/small_2x/profile-icon-login-head-icon-vector.jpg" alt="Logo">
+        </div>
+        <div class="form-column col-12 col-md-6 d-flex justify-content-center align-items-center">
+            <div class="login-form">
+                <h1 class="h3 mb-3 font-weight-normal text-center">Welcome</h1>
+                <form method="post" action="{{ url_for('login') }}">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                        <label class="form-check-label" for="remember">Remember me</label>
+                    </div>
+                    <input type="hidden" id="role" name="role">
+                    <button type="submit" class="btn btn-primary btn-block">Login</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Update Doctor Profile</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            margin-top: 50px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .form-group label {
+            font-weight: bold;
+        }
+        .form-control {
+            border-radius: 8px;
+        }
+        .btn-primary, .btn-danger, .btn-secondary {
+            border-radius: 8px;
+        }
+        .btn-primary, .btn-danger {
+            width: 48%;
+        }
+        .btn-back {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            border-radius: 8px;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .modal-content {
+            border-radius: 10px;
+        }
+        .modal-header {
+            border-bottom: none;
+        }
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Back to Profile Button -->
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary btn-back">Back to Profile</a>
+
+
+    <div class="container mt-5">
+        <h1>Update Profile for {{ doctor.fullname }}</h1>        
+        <form id="updateProfileForm" method="post" enctype="multipart/form-data" class="mt-3">
+            <div class="form-group">
+                <label for="fullname">Full Name:</label>
+                <input type="text" class="form-control" id="fullname" name="fullname" value="{{ doctor.fullname }}" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" class="form-control" id="email" name="email" value="{{ doctor.email }}" required>
+            </div>
+            <div class="form-group">
+                <label for="phone_number">Contact Number:</label>
+                <input type="text" class="form-control" id="phone_number" name="phone_number" value="{{ doctor.phone_number }}" required>
+            </div>
+            <div class="form-group">
+                <label for="address">Address:</label>
+                <input type="text" class="form-control" id="address" name="address" value="{{ doctor.address }}">
+            </div>
+            <div class="form-group">
+                <label for="picture">Update Picture:</label>
+                <input type="file" class="form-control-file" id="picture" name="picture" accept="image/*">
+            </div>
+            <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-primary" style="background-color: #28a745; border-color: #28a745; border-radius: 8px;" onclick="confirmUpdateProfile()">Update Profile</button>
+<button type="button" class="btn btn-danger" style="background-color: #ff6666; border-color: #ff6666; border-radius: 8px;" onclick="confirmRemoveDoctor()">Remove Doctor</button>
+
+            </div>
+        </form>
+    </div>
+
+
+
+    <!-- Modal for displaying messages -->
+    <div class="modal fade" id="messageModal" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="messageModalLabel">Validation Error</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="messageModalBody"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <!-- Modal for confirming actions -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1" role="dialog" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmationModalLabel">Confirmation</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    </button>
+                </div>
+                <div class="modal-body" id="confirmationModalBody"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmationModalConfirmButton">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form id="removeDoctorForm" method="post" action="{{ url_for('remove_doctor', doctor_id=doctor.id) }}" style="display: none;">
+    </form>
+
+    <script>
+        function showMessage(message) {
+            document.getElementById('messageModalBody').textContent = message;
+            $('#messageModal').modal('show');
+        }
+
+        function confirmUpdateProfile() {
+            var fullname = document.getElementById('fullname').value.trim();
+            if (fullname === "") {
+                showMessage('Full Name is required.');
+                return;
+            }
+
+            var email = document.getElementById('email').value.trim();
+            var emailPattern = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.(com)$/;
+            if (!emailPattern.test(email)) {
+                showMessage('Please enter a valid email address ending with .com');
+                return;
+            }
+
+            var phoneNumber = document.getElementById('phone_number').value.trim();
+            if (phoneNumber === "") {
+                showMessage('Please enter a valid phone number.');
+                return;
+            }
+
+            var picture = document.getElementById('picture').files[0];
+            if (picture) {
+                var allowedExtensions = ['png', 'jpg', 'jpeg', 'gif'];
+                var fileExtension = picture.name.split('.').pop().toLowerCase();
+                if (!allowedExtensions.includes(fileExtension)) {
+                    showMessage('Please upload a valid image file (png, jpg, jpeg, gif).');
+                    return;
+                }
+            }
+
+            document.getElementById('confirmationModalBody').textContent = 'Are you sure you want to update the profile?';
+            $('#confirmationModal').modal('show');
+            document.getElementById('confirmationModalConfirmButton').onclick = function() {
+                document.getElementById('updateProfileForm').submit();
+            };
+        }
+
+        function confirmRemoveDoctor() {
+            document.getElementById('confirmationModalBody').textContent = 'Are you sure you want to remove this doctor?';
+            $('#confirmationModal').modal('show');
+            document.getElementById('confirmationModalConfirmButton').onclick = function() {
+                document.getElementById('removeDoctorForm').submit();
+            };
+        }
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</body>
+</html>

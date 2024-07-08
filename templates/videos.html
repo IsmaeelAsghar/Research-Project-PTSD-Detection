@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saved Videos</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .video-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .video-item {
+            width: 180px; /* Adjust width as needed */
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        .video-item:hover {
+            transform: translateY(-5px); /* Move card up slightly on hover */
+        }
+        .video-item img {
+            width: 100%;
+            height: auto;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+        .video-item .card-body {
+            padding: 10px;
+            text-align: center;
+        }
+        .modal-body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+        }
+        .modal-body video {
+            width: 100%;
+            height: auto;
+        }
+        .back-to-dashboard {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000; /* Ensure it's above other content */
+        }
+
+
+
+
+
+        /* Your existing CSS styles */
+
+        .text-green-600 { color: #047857; }
+        .text-green-900 { color: #065F46; }
+        .text-zinc-600 { color: #4B5563; }
+        .text-zinc-700 { color: #374151; }
+        .text-zinc-900 { color: #111827; }
+        .bg-yellow-500 { background-color: #F59E0B; }
+        .hover\:bg-yellow-600:hover { background-color: #D97706; }
+        .rounded-full { border-radius: 9999px; }
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 30px;
+            margin-top: 50px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            position: relative;
+        }
+
+        .drop-area {
+            border: 2px dashed #cccccc;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            color: #aaaaaa;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+        .drop-area:hover {
+            border-color: #38b2ac;
+        }
+        .navbar {
+            background-color: #343a40;
+            padding: 0.5rem 1rem;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar-brand {
+            color: #fff;
+            font-size: 1.5rem;
+        }
+        .navbar .view-videos-btn {
+            margin-left: auto; /* Push the button to the right */
+        }
+        .ml-auto {
+            margin-left: auto;
+        }
+        .logout-btn {
+            margin-left: 10px;
+        }
+    </style>
+    
+</head>
+<body>
+ 
+
+
+
+
+        <div class="p-4 d-flex justify-content-between align-items-center bg-white">
+            <nav class="d-flex space-x-4">
+                <ul>
+                    <a href="{{ url_for('home') }}" class="text-zinc-700 hover:text-zinc-900 mr-3 active-home">Home</a>
+                    <a href="{{ url_for('about') }}" class="text-zinc-700 hover:text-zinc-900 mr-3">About</a>
+                    <a href="{{ url_for('contactus') }}" class="text-zinc-700 hover:text-zinc-900 mr-3">Contact us</a>
+                </ul>
+            </nav>
+
+            <div class="col text-right">
+                <a href="/doctor_dashboard" class="btn btn-primary back-to-dashboard">Back to Dashboard</a>
+            </div>
+            
+        </div>
+
+
+
+
+
+        <h2 class="text-center mt-4">Saved Videos</h2>
+        <div class="video-container">
+            {% for video in videos %}
+                <div class="video-item" data-video-url="{{ url_for('serve_video', filename=video) }}" data-toggle="modal" data-target="#videoModal">
+                    <div class="card">
+                        <img src="https://img.icons8.com/ios-filled/50/000000/video.png" class="card-img-top" alt="Video Icon">
+                        <div class="card-body">
+                            <p class="card-text">{{ video }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <p>No videos found in the upload folder.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Bootstrap Modal for Video Playback -->
+    <div class="modal fade" id="videoModal" tabindex="-1" role="dialog" aria-labelledby="videoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="videoModalLabel">Video Playback</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <video id="modalVideo" controls>
+                        <source id="modalVideoSource" src="" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+    <!-- Custom JavaScript to Handle Modal Video Playback -->
+    <script>
+        $(document).ready(function() {
+            // Function to open modal and play the video
+            function playVideoInModal(videoUrl) {
+                $('#modalVideoSource').attr('src', videoUrl);
+                $('#modalVideo')[0].load();
+                $('#videoModal').modal({
+                    backdrop: 'static', // Disable closing when clicking outside
+                    keyboard: false     // Disable closing with keyboard (esc key)
+                });
+            }
+
+            // Attach click event to video items
+            $('.video-item').on('click', function() {
+                var videoUrl = $(this).data('video-url');
+                playVideoInModal(videoUrl);
+            });
+
+            // When the modal is shown, ensure the video starts playing
+            $('#videoModal').on('shown.bs.modal', function() {
+                $('#modalVideo')[0].play();
+            });
+
+            // When the modal is hidden, pause the video and clear the source
+            $('#videoModal').on('hide.bs.modal', function() {
+                $('#modalVideo')[0].pause();
+                $('#modalVideoSource').attr('src', '');
+            });
+        });
+    </script>
+</body>
+</html>
