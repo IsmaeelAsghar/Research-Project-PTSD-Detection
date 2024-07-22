@@ -1,0 +1,79 @@
+<!-- <!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PTSD Prediction Result</title>
+</head>
+<body> 
+
+      <p> prediction on audio: {{ results['audio_prediction'] }}</p>
+      <p> score on audio: {{ results['audio_score'] }}</p>
+      <p>Prediction on video: {{ results['video_prediction'] }}</p>
+      <p> score on video: {{ results['video_score'] }}</p>
+    
+    <h1>PTSD Prediction Result</h1>
+    <p>Audio Prediction: {{ audio_prediction }} with score: {{ audio_score }}</p>
+    <p>Video Prediction: {{ video_prediction }} with score: {{ video_score }}</p>
+    <a href="{{ url_for('index') }}">Upload Another Video</a>
+</body>
+</html> -->
+
+
+
+
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PTSD Prediction Result</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title text-center">PTSD Prediction Result</h1>
+                
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Audio Prediction</h5>
+                        <p class="card-text">Prediction: <strong>{{ results['audio_prediction'] }}</strong></p>
+                        <p class="card-text">Score: <strong>{{ results['audio_score'] }}</strong></p>
+                    </div>
+                </div>
+                
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Video Prediction</h5>
+                        <p class="card-text">Prediction: <strong>{{ results['video_prediction'] }}</strong></p>
+                        <p class="card-text">Score: <strong>{{ results['video_score'] }}</strong></p>
+                    </div>
+                </div>
+                
+                <form action="{{ url_for('save_video') }}" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="prediction" value="{{ results['video_prediction'] }}">
+                    <div class="form-group">
+                        <label for="video">Upload Video:</label>
+                        <input type="file" class="form-control" id="video" name="video" required>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-block">Save Video</button>
+                </form>
+                
+                <a href="{{ url_for('index') }}" class="btn btn-primary btn-block mt-3">Upload Another Video</a>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+
+
+
+
+

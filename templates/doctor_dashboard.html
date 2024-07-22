@@ -186,12 +186,13 @@
                 <a href="{{ url_for('about') }}" class="text-zinc-700 hover:text-zinc-900 mr-3">About</a>
                 <a href="{{ url_for('contactus') }}" class="text-zinc-700 hover:text-zinc-900 mr-3">Contact us</a>
             </ul>
-        </nav>
+        </nav>        
         <div class="ml-auto">
-            <button id="viewVideos" class="btn btn-info view-videos-btn">View Videos</button>
-            <button id="logout" class="btn btn-danger logout-btn">Logout</button>
+            <button id="viewVideos"  href="/videos" class="btn btn-info view-videos-btn">View Videos</button>
+            
+            <a id="logout"  href="/logout" class="btn btn-danger logout-btn">Logout</a>
         </div>
-        
+    </div>
     </div>
 
     <div class="container1">
@@ -202,285 +203,86 @@
         <div class="container">
         <!-- Button Container for Upload and Record -->
         <div class="button-container">
+
             <!-- Upload Video Section -->
-            <div id="toggleUploadSectionDiv" class="upload-btn">Upload Video</div>
-            <!-- Start Recording Section -->
-            <div id="startRecordDiv" class="start-record-btn">Start Recording</div>
-        </div>
-        <!-- Back Button (initially hidden) -->
-        <button id="backToDashboard" class="btn btn-secondary back-button" style="display: none;" >Back to Dashboard</button>
-
-        <!-- Upload Video Section -->
-        <div id="uploadSection" class="toggle-section">
-            <h3 class="mt-5">Upload Video</h3>
-            <div id="drop-area" class="drop-area">
-                <img src="https://icons.veryicon.com/png/o/miscellaneous/food-time/upload-video-1.png" alt="upload icon" class="upload-icon mb-3">
-
-                <p>Drag and drop your video file here</p>
-                <p>or</p>
-                <!-- Hidden File Input -->
-                <input id="fileElem" type="file" accept="video/*" style="display: none;">
-                <!-- Visible Browse Button -->
-                <button id="browseButton" class="btn btn-primary">Browse</button>
+            <div id="toggleUploadSectionDiv" class="upload-btn">
+                <a href="{{ url_for('upload') }}"> Upload Video</a>
             </div>
-        </div>
-
-        <!-- Uploaded Video Preview -->
-        <video id="videoPreview" class="video-preview" controls></video>
+            
         
-        <!-- Record Video Section -->
-        <div id="recordControls" class="toggle-section mt-5">
-            <video id="recordedVideo" class="recorded-video-preview" controls></video>
-            <div class="video-name-input mt-3" id="videoNameInput">
-                <input type="text" id="videoName" class="form-control" placeholder="Enter video name" />
-           
-                <button id="confirmSave" class="btn btn-success mt-2">Confirm Save</button>
+            <!-- Start Recording Section -->
+            <div id="startRecordDiv" class="start-record-btn">
+                <a href="{{ url_for('record') }}"> Start Recording</a>
             </div>
-            <button id="stopRecord" class="btn btn-secondary mt-3">Stop Recording</button>
-            <button id="saveRecord" class="btn btn-success mt-3" disabled>Save Recording</button>
-           
+            
         </div>
+        
 
-        <!-- PTSD Check Button -->
-        <div id="ptsdCheckContainer" class="toggle-section mt-4">
-            <button id="checkPTSD" class="btn btn-danger">Check PTSD</button>
-        </div>
-    </div>
 
-    <!-- Bootstrap JS and jQuery -->
-    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<!-- Bootstrap JS and jQuery -->
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+
 
     <!-- JavaScript for Video Upload and Recording -->
     <script>
         document.addEventListener('DOMContentLoaded', (event) => {
             const dropArea = document.getElementById('drop-area');
             const fileInput = document.getElementById('fileElem');
-            const browseButton = document.getElementById('browseButton');
-            const videoPreview = document.getElementById('videoPreview');
-            const recordedVideo = document.getElementById('recordedVideo');
-            const startRecordDiv = document.getElementById('startRecordDiv');
-            const stopRecordButton = document.getElementById('stopRecord');
-            const saveRecordButton = document.getElementById('saveRecord');
-            const checkPTSDButton = document.getElementById('checkPTSD');
-            const toggleUploadSectionDiv = document.getElementById('toggleUploadSectionDiv');
-            const uploadSection = document.getElementById('uploadSection');
-            const recordControls = document.getElementById('recordControls');
-            const videoNameInput = document.getElementById('videoNameInput');
-            const videoNameField = document.getElementById('videoName');
-            const confirmSaveButton = document.getElementById('confirmSave');
             const ptsdCheckContainer = document.getElementById('ptsdCheckContainer');
             const backToDashboardButton = document.getElementById('backToDashboard');
             let mediaRecorder;
+            let recordedChunks = [];
 
-            // Event listener for toggling the upload section
-            toggleUploadSectionDiv.addEventListener('click', () => {
-                // Toggle visibility of uploadSection
-                if (uploadSection.style.display === 'none' || uploadSection.style.display === '') {
-                    // Show uploadSection and hide toggleUploadSectionDiv
-                    uploadSection.style.display = 'block';
-                    toggleUploadSectionDiv.style.display = 'none';
 
-                    // Hide other sections
-                    startRecordDiv.style.display = 'none';
-                    recordControls.style.display = 'none';
-                    ptsdCheckContainer.style.display = 'none';
 
-                    // Show back button
-                    backToDashboardButton.style.display = 'inline-block';
-                } else {
-                    // Hide uploadSection and show toggleUploadSectionDiv
-                    uploadSection.style.display = 'none';
-                    toggleUploadSectionDiv.style.display = 'inline-block';
 
-                    // Hide back button
-                    backToDashboardButton.style.display = 'none';
-                }
-            });
 
-            // Browse button event to trigger file input
-            browseButton.addEventListener('click', () => {
-                fileInput.click();
-                // Hide the toggleUploadSectionDiv when browse is clicked
-                toggleUploadSectionDiv.style.display = 'none';
-            });
-
-            // File input change event to preview video
-            fileInput.addEventListener('change', (event) => {
-                const file = event.target.files[0];
-                if (file) {
-                    const videoURL = URL.createObjectURL(file);
-                    videoPreview.src = videoURL;
-                    videoPreview.style.display = 'block';
-
-                    // Hide the upload section once the video is selected and uploaded
-                    uploadSection.style.display = 'none';
-                    toggleUploadSectionDiv.style.display = 'none'; // Also hide the toggle button
-
-                    // Show the PTSD check button
-                    ptsdCheckContainer.style.display = 'block';
-
-                    // Show back button
-                    backToDashboardButton.style.display = 'inline-block';
-                }
-            });
-
-            // Start recording click handler
-            startRecordDiv.addEventListener('click', async () => {
-                recordedChunks = [];
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-
-                mediaRecorder.ondataavailable = (e) => {
-                    if (e.data.size > 0) {
-                        recordedChunks.push(e.data);
-                    }
-                };
-
-                mediaRecorder.onstop = () => {
-                    const blob = new Blob(recordedChunks, { type: 'video/mp4' });
-                    recordedVideo.src = URL.createObjectURL(blob);
-                    stream.getTracks().forEach((track) => track.stop());
-                };
-
-                mediaRecorder.start();
-                recordedVideo.style.display = 'block';
-                recordedVideo.srcObject = stream;
-
-                // Hide the upload section and the upload button
-                uploadSection.style.display = 'none';
-                toggleUploadSectionDiv.style.display = 'none';
-
-                // Hide the start recording button and show the recording controls
-                startRecordDiv.style.display = 'none';
-                recordControls.style.display = 'block';
-                saveRecordButton.disabled = true;
-                stopRecordButton.style.display = 'inline-block';
-
-                // Show back button
-                backToDashboardButton.style.display = 'inline-block';
-            });
-
-            stopRecordButton.addEventListener('click', () => {
-                mediaRecorder.stop();
-
-                stopRecordButton.style.display = 'none';
-                saveRecordButton.disabled = false;
-
-                // Show PTSD Check button after recording is stopped
-                ptsdCheckContainer.style.display = 'block';
-
-                // Show back button
-                backToDashboardButton.style.display = 'inline-block';
-            });
-
-            saveRecordButton.addEventListener('click', () => {
-                // Display the video name input field when save button is clicked
-                videoNameInput.style.display = 'block';
-            });
-
-            // Confirm Save Button Click Handler
-            confirmSaveButton.addEventListener('click', () => {
-                const videoName = videoNameField.value.trim() || 'recorded_video';
-                const blob = new Blob(recordedChunks, { type: 'video/mp4' });
-                const currentDate = new Date();
-                const formattedDate = currentDate.toISOString().slice(0, 10);
-                const formattedTime = currentDate.toTimeString().slice(0, 8).replace(/:/g, '-');
-                const fullVideoName = `${videoName}_${formattedDate}_${formattedTime}.mp4`;
-
-                // Create a FormData object to send the video file
-                const formData = new FormData();
-                formData.append('video', blob, fullVideoName);
-
-                // Send the video file to the server
-                fetch('/record', {
-                    method: 'POST',
-                    body: formData
-                }).then(response => {
-                    if (response.ok) {
-                        alert('Video saved successfully!');
-
-                        // Show popup message and navigate to doctor_dashboard
-                        if (confirm('Video saved successfully! Do you want to go to the Doctor Dashboard?')) {
-                            window.location.href = 'doctor_dashboard'; // Navigate to doctor_dashboard
-                        }
-                    } else {
-                        alert('Failed to save video.');
-                    }
-                }).catch(error => {
-                    console.error('Error:', error);
-                    alert('Failed to save video. Please try again.');
-                });
-
-                // Hide the video name input field after saving
-                videoNameInput.style.display = 'none';
-                videoNameField.value = '';
-                saveRecordButton.disabled = true;
-            });
-
-            // Button to Check PTSD
-            checkPTSDButton.addEventListener('click', () => {
-                let videoBlob;
-                if (recordedVideo.src) {
-                    videoBlob = new Blob(recordedChunks, { type: 'video/mp4' });
-                } else if (videoPreview.src) {
-                    fetch(videoPreview.src)
-                        .then(response => response.blob())
-                        .then(blob => {
-                            videoBlob = blob;
-                            sendVideoForPTSDCheck(videoBlob);
-                        }).catch(error => {
-                            console.error('Error:', error);
-                            alert('Failed to retrieve uploaded video for PTSD check.');
-                        });
-                } else {
-                    alert('No video available to check PTSD.');
-                }
-                if (videoBlob) {
-                    sendVideoForPTSDCheck(videoBlob);
-                }
-            });
-
-            function sendVideoForPTSDCheck(videoBlob) {
-                // Create a FormData object to send the video file
-                const formData = new FormData();
-                formData.append('video', videoBlob, 'uploaded_video.mp4');
-
-                // Send the video file to the server for PTSD detection
-                fetch('/check_ptsd', {
-                    method: 'POST',
-                    body: formData
-                }).then(response => {
-                    if (response.ok) {
-                        return response.text(); // Assuming the server responds with text (PTSD or NO PTSD)
-                    } else {
-                        throw new Error('Failed to check PTSD.');
-                    }
-                }).then(result => {
-                    alert(`PTSD Check Result: ${result}`);
-                }).catch(error => {
-                    console.error('Error:', error);
-                    alert('Failed to check PTSD. Please try again.');
-                });
-            }
 
             // Handle View Videos button click
             document.getElementById('viewVideos').addEventListener('click', () => {
                 window.location.href = '/videos'; // Redirect to the videos page
             });
 
-            // Back to Dashboard button click handler
-            backToDashboardButton.addEventListener('click', () => {
-                window.location.href = 'doctor_dashboard'; // Navigate to doctor_dashboard
-            });
-        });
+           // Back to Dashboard button click handler
+           backToDashboardButton.addEventListener('click', () => {
+            // Hide all sections
+            uploadSection.style.display = 'none';
+            recordControls.style.display = 'none';
+            ptsdCheckContainer.style.display = 'none';
+            videoPreview.style.display = 'none';
+            recordedVideo.style.display = 'none';
 
-                    // Handle Logout button click
-                    document.getElementById('logout').addEventListener('click', () => {
-                        // Perform logout functionality, e.g., redirect to logout endpoint
-                        window.location.href = '/logout'; // Replace with actual logout endpoint
-                    });
+            // Reset the toggle buttons visibility
+            toggleUploadSectionDiv.style.display = 'inline-block';
+            startRecordDiv.style.display = 'inline-block';
+
+            // Hide back button
+            backToDashboardButton.style.display = 'none';
+        });
+    });
+
+
+
+       // Handle View Videos button click
+       document.getElementById('viewVideos').addEventListener('click', () => {
+        window.location.href = '/videos'; // Redirect to the videos page
+    });
+
+    // Back to Dashboard button click handler
+    backToDashboardButton.addEventListener('click', () => {
+        window.location.href = 'doctor_dashboard'; // Navigate to doctor_dashboard
+    });
+
+
+            // Handle Logout button click
+            document.getElementById('logout').addEventListener('click', () => {
+                // Perform logout functionality, e.g., redirect to logout endpoint
+                window.location.href = '/logout'; // Replace with actual logout endpoint
+            });
+
     </script>
 </body>
 </html>
