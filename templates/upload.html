@@ -16,7 +16,7 @@
             width: 80%;
             height: 360px;
             margin: 0 auto;
-            border: 3px dashed #007bff;
+            border: 3px dashed #134B70;
             border-radius: 10px;
             display: flex;
             align-items: center;
@@ -39,8 +39,8 @@
             margin-top: 20px;
         }
         .btn-primary {
-            background-color: #0056b3;
-            border-color: #004085;
+            background-color: #134B70;
+            border-color: #134B70;
         }
         .btn-primary:hover {
             background-color: #004085;
@@ -62,50 +62,65 @@
             display: none;
         }
         .back-to-dashboard {
-            position: absolute;
             top: 20px;
             right: 20px;
             padding: 10px 20px;
             font-size: 16px;
-            background-color: #0056b3;
+            background-color: #134B70;
             color: white;
             border: none;
             border-radius: 5px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .back-to-dashboard:hover {
-            background-color: #004085;
+            background-color: #134B70;
         }
         .toggle-section {
             margin-top: 4px;
         }
-        .spinner-border {
-            width: 3rem;
-            height: 3rem;
-            margin-top: 20px;
+        .modal-backdrop {
+            background-color: rgba(0,0,0,0.5);
         }
     </style>
 </head>
 <body>
-    <button class="back-to-dashboard" onclick="window.location.href='/dashboard';">Back to Dashboard</button>
+    {% include 'navbar.html'%}
+    <a href="{{ url_for('doctor_dashboard') }}">
+        <button class="back-to-dashboard">Back to Dashboard</button>
+    </a>
+    <br>
     <div class="container">
+        
+
         <h2 class="text-center mb-4">Upload Video</h2>
+
         <div id="uploadArea" class="upload-area">
             <p>Drag Video</p>
-            <video id="videoPreview" class="video-preview" controls></video>
+            <video id="videoPreview" class="video-preview" controls ondblclick="document.getElementById('videoInput').click();"></video>
         </div>
         <div class="controls">
             <input type="file" id="videoInput" accept="video/*" style="display: none;" onchange="fileSelected(this)">
             <button id="uploadButton" class="btn btn-primary" onclick="document.getElementById('videoInput').click();">Upload Video</button>
             
             <div id="ptsdCheckContainer" class="toggle-section hidden">
-                <form id="ptsdCheckForm" method="post" action="/check_ptsd" enctype="multipart/form-data">
+                <form id="ptsdCheckForm" method="post" action="/check_ptsd" enctype="multipart/form-data" onsubmit="showSpinner()">
                     <input id="hiddenFileInput" type="file" name="video" accept="video/mp4" style="display: none;">
                     <button type="submit" class="btn btn-primary">Check PTSD</button>
                 </form>
             </div>
-            <div id="loadingSpinner" class="spinner-border text-primary hidden" role="status">
-                <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Modal for Spinner -->
+    <div class="modal fade" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <p class="mt-3">Processing video, please wait...</p>
+                </div>
             </div>
         </div>
     </div>
@@ -122,7 +137,6 @@
         const ptsdCheckContainer = document.getElementById('ptsdCheckContainer');
         const ptsdCheckForm = document.getElementById('ptsdCheckForm');
         const hiddenFileInput = document.getElementById('hiddenFileInput');
-        const loadingSpinner = document.getElementById('loadingSpinner');
 
         uploadArea.addEventListener('dragover', (event) => {
             event.preventDefault();
@@ -163,6 +177,10 @@
             fileReader.onerror = function () {
                 alert('Error reading file!');
             };
+        }
+
+        function showSpinner() {
+            $('#loadingModal').modal('show');
         }
     </script>
 </body>

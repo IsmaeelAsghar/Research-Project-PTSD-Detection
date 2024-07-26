@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Existing CSS styles */
+        .text-green-600 { color: #047857; }
+        .text-green-900 { color: #065F46; }
+        .text-zinc-600 { color: #4B5563; }
+        .text-zinc-700 { color: #374151; }
+        .text-zinc-900 { color: #111827; }
+        .bg-yellow-500 { background-color: #F59E0B; }
+        .hover\:bg-yellow-600:hover { background-color: #D97706; }
+        .rounded-full { border-radius: 9999px; }
+        
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding:  5px;
+            padding-left: 20px;
+            padding-right: 20px;
+
+            background-color: #EEEDEB;
+        }
+
+        .navbar {
+            background-color: #EEF7FF;
+            padding: 1.4rem 4rem;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 20px 10px rgba(15, 7, 7, 0.1);
+        
+        }
+        .navbar a {
+            color: #000000;
+            margin-right: 10px;
+            text-decoration: none;
+        }
+        .navbar a:hover {
+            color: #381b1b;
+        }
+        .navbar .ml-auto {
+            display: flex;
+            align-items: center;
+        }
+        .view-videos-btn, .logout-btn {
+            padding: 10px 15px;
+            font-size: 16px;
+            border-radius: 25px;
+            background-color:#3ABEF9;
+            color: #fff;
+            border: none;
+            transition: background-color 0.4s ease;
+            margin-left: 10px;
+        }
+        .view-videos-btn:hover {
+            background-color:  #36C2CE;
+        }
+        .logout-btn:hover {
+            background-color:  #ff0808;
+        }
+        .navbar .view-videos-btn {
+            margin-left: auto; /* Push the button to the right */
+        }
+
+        /* New styles for PTSD text */
+        .navbar p.ptsd-text {
+            font-weight: bold;
+            margin-right: 20px; /* Add space after the PTSD text */
+            margin-bottom: 0; /* Remove bottom margin */
+        }
+    </style>
+</head>
+<body>
+    <br>
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <a class="navbar-brand" href="#"><p class="ptsd-text">PTSD</p></a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link text-zinc-700 hover:text-zinc-900 mr-3" href="{{ url_for('doctor_dashboard') }}">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-zinc-700 hover:text-zinc-900 mr-3" href="{{ url_for('about') }}">About</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-zinc-700 hover:text-zinc-900 mr-3" href="{{ url_for('contactus') }}">Contact us</a>
+                </li>
+            </ul>
+            <div class="ml-auto">
+                <button id="viewVideos" href="/videos" class="btn btn-info view-videos-btn">View Videos</button>
+                <a id="logout" href="/logout" class="btn btn-danger logout-btn">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Your existing content goes here -->
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    
+    
+    
+        <!-- JavaScript for Video Upload and Recording -->
+        <script>
+           
+           // Handle View Videos button click
+           document.getElementById('viewVideos').addEventListener('click', () => {
+            window.location.href = '/videos'; // Redirect to the videos page
+        });
+              // Handle Logout button click
+                document.getElementById('logout').addEventListener('click', () => {
+                    // Perform logout functionality, e.g., redirect to logout endpoint
+                    window.location.href = '/logout'; // Replace with actual logout endpoint
+                });
+    
+        </script>
+</body>
+</html>

@@ -7,14 +7,24 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            background-color: #f8f9fa;
+            background-color: #ffffff;
             height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0;
         }
+        body {
+            background-image: url('https://images.pexels.com/photos/6373139/pexels-photo-6373139.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
         .container {
+            padding: 1rem;
             display: flex;
             align-items: stretch;
             justify-content: center;
@@ -22,15 +32,22 @@
             height: 100%;
             height: 600px;
             border-radius: 12px;
-            box-shadow: 0 0 15px rgba(7, 7, 7, 0.1);
+            box-shadow: 0 0 20px 10px rgba(15, 7, 7, 0.1);
             overflow: hidden;
         }
         .image-column {
-            background-color: #6eda3c;
+            background-color: #ffffff;
             color: #ffffff;
             justify-content: center;
             align-items: center;
-            padding: 5rem;
+            padding: 2rem;
+            opacity: 0.2;
+            animation: fadeIn 3.5s forwards;
+        }
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
         }
         .image-column img {
             max-width:98%;
@@ -38,6 +55,7 @@
             border-radius: 0 0 0 12px;
         }
         .form-column {
+            background-color: #ffffff;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -49,7 +67,7 @@
             padding: 3.5rem;
             border-radius: 12px;
             background-color: #ffffff;
-            box-shadow: 0 0 15px rgba(5, 5, 5, 0.1);
+            box-shadow: 0 0 20px 10px rgba(15, 7, 7, 0.1);
         }
         .form-label {
             font-weight: bold;
@@ -99,7 +117,7 @@
 <body>
     <div class="container">
         <div class="image-column col-md-6 d-none d-md-flex">
-            <img src="https://static.vecteezy.com/system/resources/thumbnails/007/033/146/small_2x/profile-icon-login-head-icon-vector.jpg" alt="Logo">
+            <img src="{{ url_for('static', filename='login.png') }}" alt="My Image">
         </div>
         <div class="form-column col-12 col-md-6 d-flex justify-content-center align-items-center">
             <div class="login-form">
@@ -114,8 +132,6 @@
                         <input type="password" class="form-control" id="password" name="password" required>
                     </div>
                     <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="remember" name="remember">
-                        <label class="form-check-label" for="remember">Remember me</label>
                     </div>
                     <input type="hidden" id="role" name="role">
                     <button type="submit" class="btn btn-primary btn-block">Login</button>

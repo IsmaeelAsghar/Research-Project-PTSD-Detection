@@ -6,30 +6,12 @@
     <title>Doctor Dashboard</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* Your existing CSS styles */
-
-        .text-green-600 { color: #047857; }
-        .text-green-900 { color: #065F46; }
-        .text-zinc-600 { color: #4B5563; }
-        .text-zinc-700 { color: #374151; }
-        .text-zinc-900 { color: #111827; }
-        .bg-yellow-500 { background-color: #F59E0B; }
-        .hover\:bg-yellow-600:hover { background-color: #D97706; }
-        .rounded-full { border-radius: 9999px; }
-        body, html {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-        }
-
         .container {
             max-width: 800px;
             width: 90%; /* Adjust width */
-            height: 60%; /* Adjust height */
-           
-            /* height: 38%; */
+            height: 56%; /* Adjust height */
             margin: auto;
-            padding: 30px;
+            padding: 40px;
             margin-top: 50px;
             background-color: #ffffff;
             border-radius: 10px;
@@ -47,74 +29,15 @@
             position: relative;
         }
 
-        .drop-area {
-            border: 2px dashed #cccccc;
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 20px;
-            color: #aaaaaa;
-            cursor: pointer;
-            transition: border-color 0.3s ease;
-        }
-        .drop-area:hover {
-            border-color: #38b2ac;
-        }
-        .video-preview, .recorded-video-preview {
-            margin-top: 20px;
-            display: none;
-            width: 100%;
-            max-height: 340px;
-            object-fit: cover;
-        }
-        @media (max-width: 768px) {
-            .video-preview, .recorded-video-preview {
-                max-height: 200px;
-            }
-        }
-        .toggle-section {
-            display: none;
-        }
-        .upload-btn, .start-record-btn {
-            margin-left: 10px;
-            cursor: pointer;
-            padding: 10px 20px;
-            display: inline-block;
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
-        .upload-btn:hover, .start-record-btn:hover {
-            background-color: #0056b3;
-        }
-        .video-name-input {
-            display: none;
-            margin-top: 10px;
-        }
-        .view-videos-btn, .logout-btn {
-            padding: 10px 20px;
-            font-size: 16px;
-            border-radius: 5px;
-            background-color: #17a2b8;
-            color: #fff;
-            border: none;
-            transition: background-color 0.3s ease;
-        }
-        .view-videos-btn:hover, .logout-btn:hover {
-            background-color: #117a8b;
-        }
-        .control-buttons {
-            margin-top: 20px;
-        }
-        /* Flex container for the buttons */
         .button-container {
             display: flex;
             justify-content: center;
+            flex-wrap: wrap; /* Enable wrapping */
             margin-top: 100px;
         }
+
         .upload-btn, .start-record-btn {
-            margin-left: 10px;
+            margin: 10px;
             cursor: pointer;
             padding: 80px;
             display: inline-block;
@@ -127,162 +50,56 @@
             transition: transform 0.4s ease, color 0.4s ease;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+
         .upload-btn:hover, .start-record-btn:hover {
             background-color: #c4c4c4;
             color: #fff; 
             transform: translateY(-20px);
         }
-        .upload-btn {
-            margin-right: 10px;
-        }
-        .start-record-btn {
-            margin-left: 10px;
-        }
-        .navbar {
-            background-color: #343a40;
-            padding: 0.5rem 1rem;
-            margin-bottom: 20px;
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .navbar-brand {
-            color: #fff;
-            font-size: 1.5rem;
-        }
-        .navbar .view-videos-btn {
-            margin-left: auto; /* Push the button to the right */
-        }
-        .ml-auto {
-            margin-left: auto;
-        }
-        .logout-btn {
-            margin-left: 10px;
+
+        @media (max-width: 768px) {
+            .upload-btn, .start-record-btn {
+                padding: 50px; /* Reduce padding for smaller screens */
+                font-size: 16px;
+            }
         }
 
-        .upload-icon {
-            width: 100px; /* Set width to 100 pixels */
-            height: auto; /* Automatically adjust height to maintain aspect ratio */
-            display: block; /* Ensures proper alignment */
-            margin: 0 auto; /* Center horizontally */
-            margin-bottom: 3px; /* Adjust margin as needed */
-        }
-    
-        /* Center the container div */
-        .drop-area {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
+        @media (max-width: 576px) {
+            .upload-btn, .start-record-btn {
+                padding: 20px; /* Further reduce padding for extra small screens */
+                font-size: 14px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="p-4 d-flex justify-content-between align-items-center bg-white">
-        <nav class="d-flex space-x-4">
-            <ul>
-                <a href="{{ url_for('home') }}" class="text-zinc-700 hover:text-zinc-900 mr-3 active-home">Home</a>
-                <a href="{{ url_for('about') }}" class="text-zinc-700 hover:text-zinc-900 mr-3">About</a>
-                <a href="{{ url_for('contactus') }}" class="text-zinc-700 hover:text-zinc-900 mr-3">Contact us</a>
-            </ul>
-        </nav>        
-        <div class="ml-auto">
-            <button id="viewVideos"  href="/videos" class="btn btn-info view-videos-btn">View Videos</button>
-            
-            <a id="logout"  href="/logout" class="btn btn-danger logout-btn">Logout</a>
-        </div>
-    </div>
-    </div>
+    {% include 'navbar.html'%}
 
     <div class="container1">
         <h2 id="dashboardTitle">Doctor Dashboard</h2>
     </div>
 
-
-        <div class="container">
-        <!-- Button Container for Upload and Record -->
+    <div class="container">
         <div class="button-container">
-
             <!-- Upload Video Section -->
-            <div id="toggleUploadSectionDiv" class="upload-btn">
-                <a href="{{ url_for('upload') }}"> Upload Video</a>
-            </div>
-            
-        
+            <a href="{{ url_for('upload') }}">
+                <div id="toggleUploadSectionDiv" class="upload-btn">
+                    Upload Video
+                </div>
+            </a>
+
             <!-- Start Recording Section -->
-            <div id="startRecordDiv" class="start-record-btn">
-                <a href="{{ url_for('record') }}"> Start Recording</a>
-            </div>
-            
+            <a href="{{ url_for('record') }}">
+                <div id="startRecordDiv" class="start-record-btn">
+                    Start Recording
+                </div>
+            </a>
         </div>
-        
+    </div>
 
-
-<!-- Bootstrap JS and jQuery -->
-<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
-
-
-
-    <!-- JavaScript for Video Upload and Recording -->
-    <script>
-        document.addEventListener('DOMContentLoaded', (event) => {
-            const dropArea = document.getElementById('drop-area');
-            const fileInput = document.getElementById('fileElem');
-            const ptsdCheckContainer = document.getElementById('ptsdCheckContainer');
-            const backToDashboardButton = document.getElementById('backToDashboard');
-            let mediaRecorder;
-            let recordedChunks = [];
-
-
-
-
-
-
-            // Handle View Videos button click
-            document.getElementById('viewVideos').addEventListener('click', () => {
-                window.location.href = '/videos'; // Redirect to the videos page
-            });
-
-           // Back to Dashboard button click handler
-           backToDashboardButton.addEventListener('click', () => {
-            // Hide all sections
-            uploadSection.style.display = 'none';
-            recordControls.style.display = 'none';
-            ptsdCheckContainer.style.display = 'none';
-            videoPreview.style.display = 'none';
-            recordedVideo.style.display = 'none';
-
-            // Reset the toggle buttons visibility
-            toggleUploadSectionDiv.style.display = 'inline-block';
-            startRecordDiv.style.display = 'inline-block';
-
-            // Hide back button
-            backToDashboardButton.style.display = 'none';
-        });
-    });
-
-
-
-       // Handle View Videos button click
-       document.getElementById('viewVideos').addEventListener('click', () => {
-        window.location.href = '/videos'; // Redirect to the videos page
-    });
-
-    // Back to Dashboard button click handler
-    backToDashboardButton.addEventListener('click', () => {
-        window.location.href = 'doctor_dashboard'; // Navigate to doctor_dashboard
-    });
-
-
-            // Handle Logout button click
-            document.getElementById('logout').addEventListener('click', () => {
-                // Perform logout functionality, e.g., redirect to logout endpoint
-                window.location.href = '/logout'; // Replace with actual logout endpoint
-            });
-
-    </script>
+    <!-- Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 </body>
 </html>

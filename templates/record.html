@@ -76,7 +76,7 @@
             display: none;
         }
         #backToDashboard {
-            position: absolute;
+            
             top: 20px;
             right: 20px;
         }
@@ -96,6 +96,7 @@
     </style>
 </head>
 <body>
+    {% include 'navbar.html'%}
     <button id="backToDashboard" class="btn-custom">
         <a href="{{ url_for('doctor_dashboard') }}" style="color: white; text-decoration: none;">Back to Dashboard</a>
     </button>

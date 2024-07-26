@@ -1,28 +1,3 @@
-<!-- <!doctype html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PTSD Prediction Result</title>
-</head>
-<body> 
-
-      <p> prediction on audio: {{ results['audio_prediction'] }}</p>
-      <p> score on audio: {{ results['audio_score'] }}</p>
-      <p>Prediction on video: {{ results['video_prediction'] }}</p>
-      <p> score on video: {{ results['video_score'] }}</p>
-    
-    <h1>PTSD Prediction Result</h1>
-    <p>Audio Prediction: {{ audio_prediction }} with score: {{ audio_score }}</p>
-    <p>Video Prediction: {{ video_prediction }} with score: {{ video_score }}</p>
-    <a href="{{ url_for('index') }}">Upload Another Video</a>
-</body>
-</html> -->
-
-
-
-
-
 <!doctype html>
 <html lang="en">
 <head>
@@ -30,50 +5,101 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PTSD Prediction Result</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            
+            color: #4a4a4a;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-top: 40px;
+        }
+        
+        .back-to-dashboard {
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #134B70;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .back-to-dashboard:hover {
+            background-color: #137023;
+        }
+        .container {
+            padding: 50px 60px; /* Responsive padding */
+        }
+        .card {
+            box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+            padding:50px;
+            border-radius: 60px; /* Further increased rounded corners */
+            border: none;
+            margin-bottom: 30px; /* Space between cards when stacked on smaller screens */
+            height: auto; /* Automatic height adjustment */
+            overflow: hidden; /* Keeps everything inside the card */
+        }
+        .card-body {
+            padding: 40px; /* Increased padding for better layout */    
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Center content vertically */
+            height: 100%; /* Full height */
+        }
+        .card-title {
+            color: #000000;
+            font-weight: 600;
+            margin-bottom: 20px; /* Space between title and content */
+        }
+        .card-text {
+            font-size: 18px; /* Slightly larger font size */
+            margin-bottom: 10px; /* Consistent spacing */
+        }
+        @media (max-width: 768px) {
+            .card-body {
+                padding: 20px; /* Less padding on smaller screens */
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <div class="card">
+    {% include 'navbar.html' %}
+    <a href="{{ url_for('doctor_dashboard') }}">
+        <button class="back-to-dashboard">Back to Dashboard</button>
+    </a>
+    <div class="container">
+       
+        <div class="card text-center">
             <div class="card-body">
-                <h1 class="card-title text-center">PTSD Prediction Result</h1>
                 
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h5 class="card-title">Audio Prediction</h5>
-                        <p class="card-text">Prediction: <strong>{{ results['audio_prediction'] }}</strong></p>
-                        <p class="card-text">Score: <strong>{{ results['audio_score'] }}</strong></p>
+                <h1 class="card-title">PTSD Prediction Result</h1>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title">Audio Prediction</h5>
+                                <p class="card-text">Prediction: <strong>{{ results['audio_prediction'] }}</strong></p>
+                                <p class="card-text">Score: <strong>{{ results['audio_score'] }}</strong></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title">Video Prediction</h5>
+                                <p class="card-text">Prediction: <strong>{{ results['video_prediction'] }}</strong></p>
+                                <p class="card-text">Score: <strong>{{ results['video_score'] }}</strong></p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h5 class="card-title">Video Prediction</h5>
-                        <p class="card-text">Prediction: <strong>{{ results['video_prediction'] }}</strong></p>
-                        <p class="card-text">Score: <strong>{{ results['video_score'] }}</strong></p>
-                    </div>
-                </div>
-                
-                <form action="{{ url_for('save_video') }}" method="post" enctype="multipart/form-data">
-                    <input type="hidden" name="prediction" value="{{ results['video_prediction'] }}">
-                    <div class="form-group">
-                        <label for="video">Upload Video:</label>
-                        <input type="file" class="form-control" id="video" name="video" required>
-                    </div>
-                    <button type="submit" class="btn btn-success btn-block">Save Video</button>
-                </form>
-                
-                <a href="{{ url_for('index') }}" class="btn btn-primary btn-block mt-3">Upload Another Video</a>
+                <br><br>
             </div>
         </div>
     </div>
-    
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>
-
-
-
-
-

@@ -1,3 +1,6 @@
+from datetime import datetime
+import os
+
 from flask import Flask, jsonify, render_template, request, redirect, send_from_directory, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -6,34 +9,17 @@ from wtforms import StringField, PasswordField, SubmitField, FileField, TextArea
 from wtforms.validators import DataRequired, Email, EqualTo
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-import os
-from datetime import datetime
-
-
-
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
-from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, FileField, TextAreaField
-from wtforms.validators import DataRequired, Email, EqualTo
-from werkzeug.security import generate_password_hash
-from werkzeug.utils import secure_filename
-from flask import Flask, render_template, send_from_directory, url_for
-import os
 import cv2
-from mtcnn import MTCNN
 import numpy as np
 import tensorflow as tf
+from keras.models import load_model
+import matplotlib.pyplot as plt
+
 import soundfile as sf
 import moviepy.editor as mp
-from keras.models import load_model
-
-
-
-
-
-
-
-
+import resampy
+from scipy.io import wavfile
+from mtcnn import MTCNN
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
@@ -41,20 +27,43 @@ app.secret_key = 'your_secret_key_here'
 # Configure file upload folder
 UPLOAD_FOLDER = 'static/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp','mp4' }
 
 
 
 #---------------------------------------------------------------------------------------
 # Load models
-audio_model_path = os.path.join(os.path.dirname(__file__), 'model', 'submission_model_1_audio.h5')
+audio_model_path = os.path.join(os.path.dirname(__file__), 'model', 'rest_net_full_4.h5')
 audio_model = load_model(audio_model_path)
 
-video_model_path = os.path.join(os.path.dirname(__file__), 'model', 'Submission_model_1_Video.h5')
+video_model_path = os.path.join(os.path.dirname(__file__), 'model', 'best_model_by_optuna_cap_2_2.h5')
 video_model = tf.keras.models.load_model(video_model_path)
 
 
-# Doctor Registration Form Class
+
+
+# MySQL Database Configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:@127.0.0.1/ptsd_project'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Disable modification tracking
+
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
+
+# Define Doctor model
+class Doctor(db.Model):
+    __tablename__ = 'doctors'
+    id = db.Column(db.Integer, primary_key=True)
+    fullname = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    password_hash = db.Column(db.String(200), nullable=False)  # Adjust if needed
+    phone_number = db.Column(db.String(20))
+    address = db.Column(db.Text)
+    picture_filename = db.Column(db.String(255))
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+# Define Doctor registration form
 class DoctorRegistrationForm(FlaskForm):
     fullname = StringField("Full Name", validators=[DataRequired()])
     email = StringField("Email", validators=[DataRequired(), Email()])
@@ -64,7 +73,6 @@ class DoctorRegistrationForm(FlaskForm):
     address = TextAreaField("Address")
     picture = FileField("Upload Picture")
     submit = SubmitField("Register Doctor")
-
 class LoginForm(FlaskForm):
     email = StringField("Email", validators=[DataRequired(), Email()])
     password = PasswordField("Password", validators=[DataRequired()])
@@ -75,14 +83,6 @@ class LoginForm(FlaskForm):
 # -----------------
 
 
-import os
-import numpy as np
-import tensorflow as tf
-import matplotlib.pyplot as plt
-from scipy.io import wavfile
-import soundfile as sf
-import moviepy.editor as mp
-import resampy
 
 # Constants
 NUM_FRAMES = 2976
@@ -95,7 +95,7 @@ MEL_MIN_HZ = 125
 MEL_MAX_HZ = 7500
 LOG_OFFSET = 0.01
 EXAMPLE_WINDOW_SECONDS = 27.96
-EXAMPLE_HOP_SECONDS = 60
+EXAMPLE_HOP_SECONDS = 15
 
 
 def frame(data, window_length, hop_length):
@@ -281,7 +281,7 @@ def predict_audio(video_path, model):
 # Video Prediction Function
 # --------------------
 
-def predict_on_unseen_video(video_path, model, sequence_length=5, max_frames=10, time_interval=2):
+def predict_on_unseen_video(video_path, model, sequence_length=16, max_frames=100, time_interval=2):
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         print(f"Could not open video {video_path}")
@@ -325,63 +325,8 @@ def predict_on_unseen_video(video_path, model, sequence_length=5, max_frames=10,
         return prediction_score, final_prediction
 
     return None, None
-#---------------------------------------------------------------------------------------
+#
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# MySQL Database Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:@127.0.0.1/ptsd_project'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Disable modification tracking
-
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
-
-# Define Doctor model
-class Doctor(db.Model):
-    __tablename__ = 'doctors'
-    id = db.Column(db.Integer, primary_key=True)
-    fullname = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(100), unique=True, nullable=False)
-    password_hash = db.Column(db.String(200), nullable=False)  # Adjust if needed
-    phone_number = db.Column(db.String(20))
-    address = db.Column(db.Text)
-    picture_filename = db.Column(db.String(255))
-
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
-
-# Define Doctor registration form
-class DoctorRegistrationForm(FlaskForm):
-    fullname = StringField("Full Name", validators=[DataRequired()])
-    email = StringField("Email", validators=[DataRequired(), Email()])
-    password = PasswordField("Password", validators=[DataRequired()])
-    confirm_password = PasswordField("Confirm Password", validators=[DataRequired(), EqualTo('password')])
-    phone_number = StringField("Phone Number")
-    address = TextAreaField("Address")
-    picture = FileField("Upload Picture")
-    submit = SubmitField("Register Doctor")
-
-
-# Define the allowed picture extensions and the upload folder
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif','webp'}
-UPLOAD_FOLDER = os.path.join('static', 'doctors')
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # ===================================================
 #------------------------------------------------------------
@@ -395,7 +340,13 @@ def home():
     return render_template('home.html')
 
 
+# Define the allowed picture extensions and the upload folder
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif','webp'}
+UPLOAD_FOLDER = os.path.join('static', 'doctors')
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 
@@ -590,6 +541,10 @@ def remove_doctor(doctor_id):
 
 
 # =================================================
+@app.route('/navbar')
+def navbar():
+     return render_template('navbar.html')
+
 
 @app.route('/about')
 def about():
@@ -644,10 +599,6 @@ def handle_video_upload():
         return jsonify({'error': 'No video uploaded'}), 400
 
 
-
-
-
-
 @app.route('/videos')
 def show_videos():
     # List all video files in the upload directory
@@ -689,7 +640,7 @@ def check_ptsd():
                 audio_score, audio_prediction = (None, "Error")
 
             try:
-                video_score, video_prediction = predict_on_unseen_video(video_path, video_model, sequence_length=10, max_frames=200, time_interval=2)
+                video_score, video_prediction = predict_on_unseen_video(video_path, video_model, sequence_length=16, max_frames=200, time_interval=2)
             except Exception as e:
                 print(f"Error processing video: {e}")
                 video_score, video_prediction = (None, "Error")
@@ -702,66 +653,7 @@ def check_ptsd():
     return render_template('doctor_dashboard.html')
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# @app.route('/result', methods=['POST'])
-# def result():
-#     results = {
-#         'audio_prediction': request.form['audio_prediction'],
-#         'audio_score': request.form['audio_score'],
-#         'video_prediction': request.form['video_prediction'],
-#         'video_score': request.form['video_score']
-#     }
-#     return render_template('result.html', results=results)
-
-
-
-
-
-
-
-
 @app.route('/save_video', methods=['POST'])
-# def save_video():
-#     prediction = request.form['prediction']
-#     video = request.files['video']  # Assume the video is uploaded via form
-
-#     if prediction == 'PTSD':
-#         folder = 'PTSD'
-#     else:
-#         folder = 'no_PTS'
-    
-#     os.makedirs(folder, exist_ok=True)
-#     video.save(os.path.join(folder, video.filename))
-    
-#     return redirect(url_for('index'))
-
-
-
-
-
-
 def save_video():
 
 
@@ -781,36 +673,6 @@ def save_video():
     return jsonify(success=True, video_path=video_path)
 
 
-
-
-
-
-#--------------------------------------------------------
-
-
-# @app.route('/analyze_video', methods=['POST'])
-# def analyze_video():
-#     data = request.get_json()
-#     video_path = data['video_path']
-#     # Implement analysis logic here
-#     analysis_results = run_analysis_on_video(video_path)
-#     return jsonify(analysis_results)
-
-
-
-
-
-
-# @app.route('/detect_ptsd', methods=['POST'])
-# def detect_ptsd():
-#     if 'video' in request.files:
-#         video = request.files['video']
-#         # Process video to detect PTSD (replace with your logic)
-#         # Example: Simulate detection
-#         result = 'PTSD' if video.filename.startswith('recorded_video') else 'NO PTSD'
-#         return result
-#     return 'Failed to detect PTSD'
-
 @app.route('/logout')
 def logout():
     session.pop('user_id', None)
@@ -821,7 +683,4 @@ def logout():
 if __name__ == '__main__':
     
     app.run(debug=True)
-
-
-
 
