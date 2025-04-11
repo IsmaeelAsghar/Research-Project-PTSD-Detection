@@ -66,18 +66,19 @@
             margin-left: auto; /* Push the button to the right */
         }
 
-        /* New styles for PTSD text */
-        .navbar p.ptsd-text {
-            font-weight: bold;
-            margin-right: 20px; /* Add space after the PTSD text */
-            margin-bottom: 0; /* Remove bottom margin */
+        /* New styles for the logo */
+        .navbar-brand img {
+            height: 40px; /* Adjust the height of the logo */
+            margin-right: 20px; /* Add space after the logo */
         }
     </style>
 </head>
 <body>
     <br>
     <nav class="navbar navbar-expand-lg navbar-light">
-        <a class="navbar-brand" href="#"><p class="ptsd-text">PTSD</p></a>
+        <a class="navbar-brand" href="#">
+            <img src="{{ url_for('static', filename='NEW_LOGO.png') }}" alt="My Image">
+        </a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -106,21 +107,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
     
-    
-    
-        <!-- JavaScript for Video Upload and Recording -->
-        <script>
-           
-           // Handle View Videos button click
-           document.getElementById('viewVideos').addEventListener('click', () => {
+    <!-- JavaScript for Video Upload and Recording -->
+    <script>
+        // Handle View Videos button click
+        document.getElementById('viewVideos').addEventListener('click', () => {
             window.location.href = '/videos'; // Redirect to the videos page
         });
-              // Handle Logout button click
-                document.getElementById('logout').addEventListener('click', () => {
-                    // Perform logout functionality, e.g., redirect to logout endpoint
-                    window.location.href = '/logout'; // Replace with actual logout endpoint
-                });
-    
-        </script>
+
+        // Handle Logout button click
+        document.getElementById('logout').addEventListener('click', () => {
+            // Perform logout functionality, e.g., redirect to logout endpoint
+            window.location.href = '/logout'; // Replace with actual logout endpoint
+        });
+    </script>
 </body>
 </html>

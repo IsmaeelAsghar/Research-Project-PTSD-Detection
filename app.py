@@ -1,6 +1,3 @@
-from datetime import datetime
-import os
-
 from flask import Flask, jsonify, render_template, request, redirect, send_from_directory, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -9,19 +6,27 @@ from wtforms import StringField, PasswordField, SubmitField, FileField, TextArea
 from wtforms.validators import DataRequired, Email, EqualTo
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+import os
+import resampy
+from datetime import datetime
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from wtforms.validators import DataRequired, Email, EqualTo
+from werkzeug.security import generate_password_hash
+from werkzeug.utils import secure_filename
+from flask import Flask, render_template, send_from_directory, url_for
 import cv2
+from mtcnn import MTCNN
 import numpy as np
 import tensorflow as tf
-from keras.models import load_model
-import matplotlib.pyplot as plt
-
 import soundfile as sf
 import moviepy.editor as mp
-import resampy
-from scipy.io import wavfile
-from mtcnn import MTCNN
+from keras.models import load_model
+
+
+
 
 app = Flask(__name__)
+
 app.secret_key = 'your_secret_key_here'
 
 # Configure file upload folder
@@ -32,15 +37,27 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp','mp4' }
 
 
 #---------------------------------------------------------------------------------------
-# Load models
-audio_model_path = os.path.join(os.path.dirname(__file__), 'model', 'rest_net_full_4.h5')
+
+# Load models 
+base_dir = os.path.dirname(__file__)
+
+audio_model_path = os.path.join(base_dir, 'model', 'yamnet_6.h5')
 audio_model = load_model(audio_model_path)
 
-video_model_path = os.path.join(os.path.dirname(__file__), 'model', 'best_model_by_optuna_cap_2_2.h5')
+video_model_path = os.path.join(base_dir, 'model', 'Refined_data_model_1.h5')
 video_model = tf.keras.models.load_model(video_model_path)
 
 
 
+class DoctorRegistrationForm(FlaskForm):
+    fullname = StringField("Full Name", validators=[DataRequired()])
+    email = StringField("Email", validators=[DataRequired(), Email()])
+    password = PasswordField("Password", validators=[DataRequired()])
+    confirm_password = PasswordField("Confirm Password", validators=[DataRequired(), EqualTo('password')])
+    phone_number = StringField("Phone Number")
+    address = TextAreaField("Address")
+    picture = FileField("Upload Picture")
+    submit = SubmitField("Register Doctor")
 
 # MySQL Database Configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:@127.0.0.1/ptsd_project'
@@ -73,6 +90,7 @@ class DoctorRegistrationForm(FlaskForm):
     address = TextAreaField("Address")
     picture = FileField("Upload Picture")
     submit = SubmitField("Register Doctor")
+    
 class LoginForm(FlaskForm):
     email = StringField("Email", validators=[DataRequired(), Email()])
     password = PasswordField("Password", validators=[DataRequired()])
@@ -81,254 +99,308 @@ class LoginForm(FlaskForm):
 # -----------------
 # logic for audio
 # -----------------
+import tensorflow as tf
+import numpy as np
+import moviepy.editor as mp
+import soundfile as sf
 
+# Define the Params class
+class Params:
+    def __init__(self):
+        self.sample_rate = 16000.0
+        self.stft_window_seconds = 0.025
+        self.stft_hop_seconds = 0.010
+        self.mel_bands = 64
+        self.mel_min_hz = 125.0
+        self.mel_max_hz = 7500.0
+        self.log_offset = 0.001
+        self.patch_window_seconds = 27.96
+        self.patch_hop_seconds = 15
+        self.num_classes = 521
+        self.conv_padding = 'same'
+        self.batchnorm_center = True
+        self.batchnorm_scale = False
+        self.batchnorm_epsilon = 1e-4
+        self.classifier_activation = 'sigmoid'
+        self.tflite_compatible = False
 
+    @property
+    def patch_frames(self):
+        return int(round(self.patch_window_seconds / self.stft_hop_seconds))
 
-# Constants
-NUM_FRAMES = 2976
-NUM_BANDS = 64
-SAMPLE_RATE = 16000
-STFT_WINDOW_LENGTH_SECONDS = 0.025
-STFT_HOP_LENGTH_SECONDS = 0.010
-NUM_MEL_BINS = NUM_BANDS
-MEL_MIN_HZ = 125
-MEL_MAX_HZ = 7500
-LOG_OFFSET = 0.01
-EXAMPLE_WINDOW_SECONDS = 27.96
-EXAMPLE_HOP_SECONDS = 15
+    @property
+    def patch_bands(self):
+        return self.mel_bands
 
-
-def frame(data, window_length, hop_length):
-    num_samples = data.shape[0]
-    num_frames = 1 + int(np.floor((num_samples - window_length) / hop_length))
-    shape = (num_frames, window_length) + data.shape[1:]
-    strides = (data.strides[0] * hop_length,) + data.strides
-    return np.lib.stride_tricks.as_strided(data, shape=shape, strides=strides)
-
-def periodic_hann(window_length):
-    return 0.5 - (0.5 * np.cos(2 * np.pi / window_length *
-                             np.arange(window_length)))
-
-def stft_magnitude(signal, fft_length, hop_length=None, window_length=None):
-    frames = frame(signal, window_length, hop_length)
-    window = periodic_hann(window_length)
-    windowed_frames = frames * window
-    return np.abs(np.fft.rfft(windowed_frames, int(fft_length)))
-
-
-_MEL_BREAK_FREQUENCY_HERTZ = 700.0
-_MEL_HIGH_FREQUENCY_Q = 1127.0
-
-def hertz_to_mel(frequencies_hertz):
-    return _MEL_HIGH_FREQUENCY_Q * np.log(
-      1.0 + (frequencies_hertz / _MEL_BREAK_FREQUENCY_HERTZ))
-
-def spectrogram_to_mel_matrix(num_mel_bins=20, num_spectrogram_bins=129,
-                              audio_sample_rate=8000,
-                              lower_edge_hertz=125.0,
-                              upper_edge_hertz=3800.0):
-    nyquist_hertz = audio_sample_rate / 2.
-    if lower_edge_hertz < 0.0:
-      raise ValueError("lower_edge_hertz %.1f must be >= 0" % lower_edge_hertz)
-    if lower_edge_hertz >= upper_edge_hertz:
-      raise ValueError("lower_edge_hertz %.1f >= upper_edge_hertz %.1f" %
-                     (lower_edge_hertz, upper_edge_hertz))
-    if upper_edge_hertz > nyquist_hertz:
-      raise ValueError("upper_edge_hertz %.1f is greater than Nyquist %.1f" %
-                     (upper_edge_hertz, nyquist_hertz))
-    spectrogram_bins_hertz = np.linspace(0.0, nyquist_hertz, num_spectrogram_bins)
-    spectrogram_bins_mel = hertz_to_mel(spectrogram_bins_hertz)
-
-    band_edges_mel = np.linspace(hertz_to_mel(lower_edge_hertz),
-                               hertz_to_mel(upper_edge_hertz), num_mel_bins + 2)
-    mel_weights_matrix = np.empty((num_spectrogram_bins, num_mel_bins))
-
-    for i in range(num_mel_bins):
-      lower_edge_mel, center_mel, upper_edge_mel = band_edges_mel[i:i + 3]
-      lower_slope = ((spectrogram_bins_mel - lower_edge_mel) /
-                   (center_mel - lower_edge_mel))
-      upper_slope = ((upper_edge_mel - spectrogram_bins_mel) /
-                   (upper_edge_mel - center_mel))
-      mel_weights_matrix[:, i] = np.maximum(0.0, np.minimum(lower_slope,
-                                                          upper_slope))
-    mel_weights_matrix[0, :] = 0.0
-    return mel_weights_matrix
-
-
-def log_mel_spectrogram(data, audio_sample_rate=8000, log_offset=0.0,
-                        window_length_secs=0.025, hop_length_secs=0.010,
-                        **kwargs):
-    window_length_samples = int(round(audio_sample_rate * window_length_secs))
-    hop_length_samples = int(round(audio_sample_rate * hop_length_secs))
+# Function to convert waveform to log-mel spectrogram patches
+def waveform_to_log_mel_spectrogram_patches(waveform, params):
+    window_length_samples = int(round(params.sample_rate * params.stft_window_seconds))
+    hop_length_samples = int(round(params.sample_rate * params.stft_hop_seconds))
     fft_length = 2 ** int(np.ceil(np.log(window_length_samples) / np.log(2.0)))
+    num_spectrogram_bins = fft_length // 2 + 1
 
-    spectrogram = stft_magnitude(
-        data,
-        fft_length=fft_length,
-        hop_length=hop_length_samples,
-        window_length=window_length_samples)
+    if params.tflite_compatible:
+        magnitude_spectrogram = _tflite_stft_magnitude(
+            signal=waveform,
+            frame_length=window_length_samples,
+            frame_step=hop_length_samples,
+            fft_length=fft_length)
+    else:
+        magnitude_spectrogram = tf.abs(tf.signal.stft(
+            signals=waveform,
+            frame_length=window_length_samples,
+            frame_step=hop_length_samples,
+            fft_length=fft_length))
 
-    mel_spectrogram = np.dot(spectrogram, spectrogram_to_mel_matrix(
-        num_spectrogram_bins=spectrogram.shape[1],
-        audio_sample_rate=audio_sample_rate, **kwargs))
+    linear_to_mel_weight_matrix = tf.signal.linear_to_mel_weight_matrix(
+        num_mel_bins=params.mel_bands,
+        num_spectrogram_bins=num_spectrogram_bins,
+        sample_rate=params.sample_rate,
+        lower_edge_hertz=params.mel_min_hz,
+        upper_edge_hertz=params.mel_max_hz)
+    mel_spectrogram = tf.matmul(magnitude_spectrogram, linear_to_mel_weight_matrix)
+    log_mel_spectrogram = tf.math.log(mel_spectrogram + params.log_offset)
 
-    return np.log(mel_spectrogram + log_offset)
+    spectrogram_hop_length_samples = int(round(params.sample_rate * params.stft_hop_seconds))
+    spectrogram_sample_rate = params.sample_rate / spectrogram_hop_length_samples
+    patch_window_length_samples = int(round(spectrogram_sample_rate * params.patch_window_seconds))
+    patch_hop_length_samples = int(round(spectrogram_sample_rate * params.patch_hop_seconds))
+    features = tf.signal.frame(
+        signal=log_mel_spectrogram,
+        frame_length=patch_window_length_samples,
+        frame_step=patch_hop_length_samples,
+        axis=0)
 
+    return log_mel_spectrogram, features
 
-# Placeholder function for waveform to examples
-def waveform_to_examples(data, sample_rate):
-    # Convert to mono.
-  if len(data.shape) > 1:
-    data = np.mean(data, axis=1)
-  print("Mono Audio Data Shape:", data.shape)
-  # Resample to the rate assumed by VGGish.
-  if sample_rate != SAMPLE_RATE:
-    data = resampy.resample(data, sample_rate, SAMPLE_RATE)
-  print("Resampled Audio Data Shape:", data.shape)
+# Function to pad waveform
+def pad_waveform(waveform, params):
+    min_waveform_seconds = (
+        params.patch_window_seconds +
+        params.stft_window_seconds - params.stft_hop_seconds)
+    min_num_samples = tf.cast(min_waveform_seconds * params.sample_rate, tf.int32)
+    num_samples = tf.shape(waveform)[0]
+    num_padding_samples = tf.maximum(0, min_num_samples - num_samples)
 
-  # Compute log mel spectrogram features.
+    num_samples = tf.maximum(num_samples, min_num_samples)
+    num_samples_after_first_patch = num_samples - min_num_samples
+    hop_samples = tf.cast(params.patch_hop_seconds * params.sample_rate, tf.int32)
+    num_hops_after_first_patch = tf.cast(tf.math.ceil(
+        tf.cast(num_samples_after_first_patch, tf.float32) /
+        tf.cast(hop_samples, tf.float32)), tf.int32)
+    num_padding_samples += (
+        hop_samples * num_hops_after_first_patch - num_samples_after_first_patch)
 
-  log_mel = log_mel_spectrogram(
-      data,
-      audio_sample_rate=SAMPLE_RATE,
-      log_offset=LOG_OFFSET,
-      window_length_secs=STFT_WINDOW_LENGTH_SECONDS,
-      hop_length_secs=STFT_HOP_LENGTH_SECONDS,
-      num_mel_bins=NUM_MEL_BINS,
-      lower_edge_hertz=MEL_MIN_HZ,
-      upper_edge_hertz=MEL_MAX_HZ)
-  print("Log Mel Spectrogram Shape:", log_mel.shape)
+    padded_waveform = tf.pad(waveform, [[0, num_padding_samples]],
+                             mode='CONSTANT', constant_values=0.0)
+    return padded_waveform
 
-  # Frame features into examples.
-  features_sample_rate = 1.0 / STFT_HOP_LENGTH_SECONDS
-  example_window_length = int(round(
-      EXAMPLE_WINDOW_SECONDS * features_sample_rate))
-  example_hop_length = int(round(
-      EXAMPLE_HOP_SECONDS * features_sample_rate))
-  log_mel_examples = frame(
-      log_mel,
-      window_length=example_window_length,
-      hop_length=example_hop_length)
-  print("Log Mel Examples Shape:", log_mel_examples.shape)
-  return log_mel_examples
+# Function to perform STFT for TFLite compatibility
+def _tflite_stft_magnitude(signal, frame_length, frame_step, fft_length):
+    def _hann_window():
+        return tf.reshape(
+            tf.constant(
+                (0.5 - 0.5 * np.cos(2 * np.pi * np.arange(0, 1.0, 1.0 / frame_length))
+                ).astype(np.float32),
+                name='hann_window'), [1, frame_length])
 
+    def _dft_matrix(dft_length):
+        omega = (0 + 1j) * 2.0 * np.pi / float(dft_length)
+        return np.exp(omega * np.outer(np.arange(dft_length), np.arange(dft_length)))
 
+    def _rdft(framed_signal, fft_length):
+        complex_dft_matrix_kept_values = _dft_matrix(fft_length)[:(
+            fft_length // 2 + 1), :].transpose()
+        real_dft_matrix = tf.constant(
+            np.real(complex_dft_matrix_kept_values).astype(np.float32),
+            name='real_dft_matrix')
+        imag_dft_matrix = tf.constant(
+            np.imag(complex_dft_matrix_kept_values).astype(np.float32),
+            name='imaginary_dft_matrix')
+        signal_frame_length = tf.shape(framed_signal)[-1]
+        half_pad = (fft_length - signal_frame_length) // 2
+        padded_frames = tf.pad(
+            framed_signal,
+            [
+                [0, 0],
+                [half_pad, fft_length - signal_frame_length - half_pad]
+            ],
+            mode='CONSTANT',
+            constant_values=0.0)
+        real_stft = tf.matmul(padded_frames, real_dft_matrix)
+        imag_stft = tf.matmul(padded_frames, imag_dft_matrix)
+        return real_stft, imag_stft
 
+    def _complex_abs(real, imag):
+        return tf.sqrt(tf.add(real * real, imag * imag))
 
-
-# --------------------
-# Data Loading Functions
-# --------------------
-
-
-
+    framed_signal = tf.signal.frame(signal, frame_length, frame_step)
+    windowed_signal = framed_signal * _hann_window()
+    real_stft, imag_stft = _rdft(windowed_signal, fft_length)
+    stft_magnitude = _complex_abs(real_stft, imag_stft)
+    return stft_magnitude
 
 def extract_audio(video_path, audio_path):
     try:
         video_clip = mp.VideoFileClip(video_path)
         audio_clip = video_clip.audio
         audio_clip.write_audiofile(audio_path)
-        video_clip.close()
-        return audio_path
+        return True
     except Exception as e:
-        print(f"Error extracting audio from {video_path}: {e}")
-        return None
+        print(f"Error extracting audio: {e}")
+        return False
 
-def wav_read(wav_file):
-    wav_data, sr = sf.read(wav_file, dtype='int16')
-    return wav_data, sr
+def load_audio_and_convert_to_spectrogram(file_path):
+    audio_binary = tf.io.read_file(file_path)
+    waveform, sample_rate = tf.audio.decode_wav(audio_binary)
 
-# --------------------
-# Audio Prediction Function
-# --------------------
+    if waveform.shape[-1] == 2:
+        waveform = tf.reduce_mean(waveform, axis=-1)
 
-def predict_audio(video_path, model):
-    try:
-        audio_file_path = os.path.join(app.config['UPLOAD_FOLDER'], "temp_audio.wav")
-        extracted_audio_path = extract_audio(video_path, audio_file_path)
+    if len(waveform.shape) == 2 and waveform.shape[-1] == 1:
+        waveform = tf.squeeze(waveform, axis=-1)
 
-        if extracted_audio_path is None:
-            print(f"Error extracting audio from {video_path}")
-            return None
+    # Assuming Params class and related functions are defined somewhere in your code
+    params = Params()
+    padded_waveform = pad_waveform(waveform, params)
+    log_mel_spectrogram, features = waveform_to_log_mel_spectrogram_patches(padded_waveform, params)
 
-        wav_data, sr = wav_read(extracted_audio_path)
-        spectrograms = waveform_to_examples(wav_data, sr)
-        max_timesteps = 2796
+    return log_mel_spectrogram, features
 
-        if spectrograms.shape[0] > max_timesteps:
-            spectrograms = spectrograms[:max_timesteps]
-        elif spectrograms.shape[0] < max_timesteps:
-            pad_width = [(0, max_timesteps - spectrograms.shape[0]), (0, 0), (0, 0)]
-            spectrograms = np.pad(spectrograms, pad_width, 'constant')
-
-        reshaped_examples = spectrograms.reshape(-1, 2796, 64, 3)
-        normalized_examples = reshaped_examples / 255.0
-        predictions = model.predict(normalized_examples)
-        ptsd_probability = predictions[0][1]
-        no_ptsd_probability = predictions[0][0]
-
-        prediction_label = "PTSD" if ptsd_probability > no_ptsd_probability else "NO PTSD"
-        prediction_score = ptsd_probability if ptsd_probability > no_ptsd_probability else no_ptsd_probability
-
-        return prediction_score, prediction_label
-
-    except Exception as e:
-        print(f"Error processing {video_path}: {e}")
-        return None, None
+def predict_ptsd(file_path, model):
+    log_mel_spectrogram, features = load_audio_and_convert_to_spectrogram(file_path)
+    features = tf.expand_dims(features, axis=-1)
+    features = tf.concat([features, features, features], axis=-1)
+    predictions = model.predict(features)
+    
+    # Get the predicted class per feature
+    predicted_classes = np.argmax(predictions, axis=1)
+    
+    # Determine the majority class from all feature predictions
+    final_prediction = np.bincount(predicted_classes).argmax()
+    
+    # Calculate the prediction score (proportion of features predicted as the majority class)
+    prediction_score = np.bincount(predicted_classes)[final_prediction] / len(predicted_classes)
+    
+    # Map numeric prediction to labels
+    labels = {0: "No PTSD", 1: "PTSD"}
+    return labels.get(final_prediction, "Unknown"), prediction_score
 
 
-# --------------------
-# Video Prediction Function
-# --------------------
+# logic for video
 
-def predict_on_unseen_video(video_path, model, sequence_length=16, max_frames=100, time_interval=2):
+def predict_ptsd_from_video(video_path, model):
+    audio_temp_path = os.path.join(app.config['UPLOAD_FOLDER'], "temp_audio.wav")
+    if extract_audio(video_path, audio_temp_path):
+        return predict_ptsd(audio_temp_path, model)
+    else:
+        return "Audio extraction failed", 0.0
+
+
+
+def predict_on_unseen_video(video_path, model, sequence_length=15, max_frames=20):
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         print(f"Could not open video {video_path}")
-        return None, None
+        return "Error", 0.0
 
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    interval_frame_count = max(int(fps * time_interval), 1)
+    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))  # Total frame count of the video
+    segment_interval = max(int(frame_count / max_frames), 1)  # Interval to pick frames from each segment
     detector = MTCNN()
     frame_sequence = []
     predictions_list = []
 
-    for frame_index in range(0, min(frame_count, max_frames * interval_frame_count), interval_frame_count):
-        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_index)
-        ret, frame = cap.read()
-        if not ret:
-            break
+    for segment_index in range(max_frames):
+        start_frame_index = segment_index * segment_interval
+        end_frame_index = min((segment_index + 1) * segment_interval, frame_count)
 
-        results = detector.detect_faces(frame)
-        for result in results:
-            bbox = result['box']
-            detected_face = frame[bbox[1]:bbox[1]+bbox[3], bbox[0]:bbox[0]+bbox[2]]
-            resized_face = cv2.resize(detected_face, (224, 224))
-            frame_sequence.append(resized_face)
+        found_face = False
+        for step in range(0, 15, 3):  # Check up to 5 frames within the segment, stepping by 3 frames each time
+            frame_index = start_frame_index + step
+            if frame_index >= end_frame_index:
+                break
 
-            if len(frame_sequence) == sequence_length:
-                sequence = np.array(frame_sequence)
-                sequence = np.expand_dims(sequence, axis=0)
-                predictions = model.predict(sequence)
-                predictions_list.append(predictions)
-                frame_sequence = []
+            cap.set(cv2.CAP_PROP_POS_FRAMES, frame_index)
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            results = detector.detect_faces(frame)
+            if results:
+                found_face = True
+                for result in results:
+                    bbox = result['box']
+                    detected_face = frame[bbox[1]:bbox[1]+bbox[3], bbox[0]:bbox[0]+bbox[2]]
+                    resized_face = cv2.resize(detected_face, (224, 224))
+                    frame_sequence.append(resized_face)
+
+                    if len(frame_sequence) == sequence_length:
+                        sequence = np.array(frame_sequence)
+                        sequence = np.expand_dims(sequence, axis=0)
+                        predictions = model.predict(sequence)
+                        predictions_list.append(predictions)
+                        frame_sequence = []  # Reset for the next sequence
+                if found_face:
+                    break
 
     cap.release()
 
+    # Handle predictions
     if predictions_list:
         prediction_scores = np.mean(predictions_list, axis=0)
         predicted_class_index = np.argmax(prediction_scores)
         classes = ["NO PTSD", "PTSD"]
         final_prediction = classes[predicted_class_index]
-        prediction_score = prediction_scores[0][predicted_class_index]
-        return prediction_score, final_prediction
+        return final_prediction, prediction_scores.flatten()[predicted_class_index]
+    else:
+        return "No faces detected or no frames processed.", 0.0
 
-    return None, None
-#
+
+
+@app.route('/check_ptsd', methods=['GET', 'POST'])
+def check_ptsd():
+    if request.method == 'POST':
+        video_file = request.files['video']
+
+        if video_file:
+            video_path = os.path.join(app.config['UPLOAD_FOLDER'], video_file.filename)
+            video_file.save(video_path)
+
+            try:
+                audio_prediction, audio_score = predict_ptsd_from_video(video_path, audio_model)
+            except Exception as e:
+                print(f"Error processing audio: {e}")
+                audio_prediction, audio_score = "Error", 0.0
+
+            try:
+                video_prediction, video_score = predict_on_unseen_video(video_path, video_model, sequence_length=15, max_frames=150)
+            except Exception as e:
+                print(f"Error processing video: {e}")
+                video_prediction, video_score = "Error", 0.0
+
+            os.remove(video_path)
+            results = {
+                'audio_prediction': audio_prediction,
+                'audio_score': audio_score,
+                'video_prediction': video_prediction,
+                'video_score': video_score
+            }
+            print("Results being passed to template:", results)
+            return render_template('result.html', results=results)
+        
+    return render_template('doctor_dashboard.html')
 
 
 # ===================================================
+
+# Define the allowed picture extensions and the upload folder
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif','webp'}
+UPLOAD_FOLDER = os.path.join('static', 'doctors')
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 #------------------------------------------------------------
 @app.route('/')
 def index():
@@ -338,15 +410,6 @@ def index():
 @app.route('/home')
 def home():
     return render_template('home.html')
-
-
-# Define the allowed picture extensions and the upload folder
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif','webp'}
-UPLOAD_FOLDER = os.path.join('static', 'doctors')
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 
@@ -420,7 +483,7 @@ def login():
             if check_password_hash(hashed_admin_password, password):
                 session['user_id'] = 1  # You can set this to any constant or unique ID for the admin
                 session['user_role'] = 'admin'
-                flash('Admin login successful!', 'success')
+                #flash('Admin login successful!', 'success')
                 return redirect(url_for('admin_dashboard'))
             else:
                 flash('Invalid admin email or password.', 'danger')
@@ -432,7 +495,7 @@ def login():
             if doctor.check_password(password):
                 session['user_id'] = doctor.id
                 session['user_role'] = 'doctor'
-                flash('Doctor login successful!', 'success')
+                #flash('Doctor login successful!', 'success')
                 return redirect(url_for('doctor_dashboard'))
             else:
                 flash('Invalid doctor email or password.', 'danger')
@@ -540,10 +603,17 @@ def remove_doctor(doctor_id):
 
 
 
+# -----------------------------
+# 
+# 
 # =================================================
 @app.route('/navbar')
 def navbar():
      return render_template('navbar.html')
+
+@app.route('/admin_navbar')
+def admin_navbar():
+     return render_template('admin_navbar.html')
 
 
 @app.route('/about')
@@ -586,7 +656,6 @@ def record_video():
 
 
 
-
 @app.route('/upload_recorded_video', methods=['POST'])
 def handle_video_upload():
     video = request.files['video']
@@ -623,34 +692,34 @@ def serve_video(filename):
 
 
 
-@app.route('/check_ptsd', methods=['GET', 'POST'])
-def check_ptsd():
-    # results = {'audio_prediction': 'Not processed', 'audio_score': 'Not processed', 'video_prediction': 'Not processed', 'video_score': 'Not processed'}  # Default results
-    if request.method == 'POST':
-        video_file = request.files['video']
+# @app.route('/check_ptsd', methods=['GET', 'POST'])
+# def check_ptsd():
+#     # results = {'audio_prediction': 'Not processed', 'audio_score': 'Not processed', 'video_prediction': 'Not processed', 'video_score': 'Not processed'}  # Default results
+#     if request.method == 'POST':
+#         video_file = request.files['video']
 
-        if video_file:
-            video_path = os.path.join(app.config['UPLOAD_FOLDER'], video_file.filename)
-            video_file.save(video_path)
+#         if video_file:
+#             video_path = os.path.join(app.config['UPLOAD_FOLDER'], video_file.filename)
+#             video_file.save(video_path)
 
-            try:
-                audio_score, audio_prediction = predict_audio(video_path, audio_model)
-            except Exception as e:
-                print(f"Error processing audio: {e}")
-                audio_score, audio_prediction = (None, "Error")
+#             try:
+#                 audio_score, audio_prediction = predict_audio(video_path, audio_model)
+#             except Exception as e:
+#                 print(f"Error processing audio: {e}")
+#                 audio_score, audio_prediction = (None, "Error")
 
-            try:
-                video_score, video_prediction = predict_on_unseen_video(video_path, video_model, sequence_length=16, max_frames=200, time_interval=2)
-            except Exception as e:
-                print(f"Error processing video: {e}")
-                video_score, video_prediction = (None, "Error")
+#             try:
+#                 video_score, video_prediction = predict_on_unseen_video(video_path, video_model, sequence_length=16, max_frames=200, time_interval=2)
+#             except Exception as e:
+#                 print(f"Error processing video: {e}")
+#                 video_score, video_prediction = (None, "Error")
 
-            os.remove(video_path)
-            results = {'audio_prediction': audio_prediction, 'audio_score': audio_score, 'video_prediction': video_prediction, 'video_score': video_score}
-            print("Results being passed to template:", results)
-            return render_template('result.html', results=results)
+#             os.remove(video_path)
+#             results = {'audio_prediction': audio_prediction, 'audio_score': audio_score, 'video_prediction': video_prediction, 'video_score': video_score}
+#             print("Results being passed to template:", results)
+#             return render_template('result.html', results=results)
         
-    return render_template('doctor_dashboard.html')
+#     return render_template('doctor_dashboard.html')
 
 
 @app.route('/save_video', methods=['POST'])
@@ -677,7 +746,7 @@ def save_video():
 def logout():
     session.pop('user_id', None)
     session.pop('user_role', None)
-    flash("You have been logged out successfully.", 'success')
+    
     return redirect(url_for('index'))
 
 if __name__ == '__main__':

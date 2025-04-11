@@ -1,26 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI-Powered PTSD Decision Support System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
 
+        main {
+            max-width: 900px;
+            margin: 50px auto;
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #2c3e50;
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 25px;
+        }
+
+        p {
+            color: #6c757d;
+            font-size: 1rem;
+            line-height: 1.7;
+            text-align: justify;
+        }
+
+        #scope {
+            margin-bottom: 30px;
+        }
+
+        #scope ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #scope li {
+            background-color: #e9ecef;
+            border-left: 5px solid #2c3e50;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 15px;
+            color: #34495e;
+            font-size: 1rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        #scope li:hover {
+            transform: translateX(5px);
+            border-left-color: #3498db;
+        }
+
+        @media (max-width: 600px) {
+            main {
+                padding: 20px;
+            }
+
+            h2 {
+                font-size: 1.6rem;
+            }
+
+            p {
+                font-size: 0.9rem;
+            }
+
+            #scope li {
+                padding: 15px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
 </head>
+
 <body>
-    <header>
-        <h1>AI-Powered PTSD Decision Support System</h1>
-        <nav>
-            <ul>
-                <li><a href="{{ url_for('home') }}">Home</a></li>
-                <li><a href="{{ url_for('about') }}">About</a></li>
-                <li><a href="{{ url_for('contactus') }}">Contact us</a></li>
-            </ul>
-        </nav>
-    </header>
+    <!-- Navigation bar -->
+    {% include 'navbar.html'%}
     <main>
         <section id="project-purpose">
             <h2>Project Purpose</h2>
-            <p>The purpose of this project is to develop a sophisticated Decision Support System (DSS) powered by artificial intelligence (AI) to assist psychologists and healthcare professionals in accurately diagnosing Post-Traumatic Stress Disorder (PTSD). By leveraging advanced AI techniques and analyzing audio and visual data, the system aims to provide a more objective and refined approach to PTSD diagnosis compared to traditional subjective methods. The project seeks to improve diagnostic accuracy, reduce the likelihood of misdiagnosis or underdiagnoses, and ultimately enhance the overall efficiency of PTSD diagnosis in clinical settings. Additionally, it aims to create a user-friendly interface for healthcare professionals while prioritizing patient data security and integration with existing healthcare systems.</p>
+            <p>
+                The purpose of this project is to develop a sophisticated Decision Support System (DSS) powered by artificial intelligence (AI) to assist psychologists and healthcare professionals in accurately diagnosing Post-Traumatic Stress Disorder (PTSD). By leveraging advanced AI techniques and analyzing audio and visual data, the system aims to provide a more objective and refined approach to PTSD diagnosis compared to traditional subjective methods. The project seeks to improve diagnostic accuracy, reduce the likelihood of misdiagnosis or underdiagnoses, and ultimately enhance the overall efficiency of PTSD diagnosis in clinical settings. Additionally, it aims to create a user-friendly interface for healthcare professionals while prioritizing patient data security and integration with existing healthcare systems.
+            </p>
         </section>
         <section id="scope">
             <h2>Scope</h2>
@@ -33,8 +106,10 @@
             </ul>
         </section>
     </main>
-    <footer>
-        <p>&copy; 2024 [PTSD Detection/GIFT University]</p>
-    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 </body>
+
 </html>

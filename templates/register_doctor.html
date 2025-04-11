@@ -13,14 +13,16 @@
             background-color: #f8f9fa;
         }
         .container {
-            max-width: 500px;
-            margin: auto;
-            padding: 20px;
-            margin-top: 50px;
-            background-color: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
+    width: 500px !important; /* Enforce the width */
+    max-width: 100% !important; /* Ensures responsiveness */
+    margin: auto;
+    padding: 20px;
+
+    margin-top: 20px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
         .form-group {
             margin-bottom: 20px;
         }
@@ -63,12 +65,30 @@
             left: 20px;
             border-radius: 8px;
         }
+
+        .back-to-dashboard {
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #134B70;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .back-to-dashboard:hover {
+            background-color: #134B70;
+        }
+
     </style>
 </head>
 <body>
+    {% include 'admin_navbar.html'%}
     <!-- Back to Dashboard Button -->
-    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary btn-back">Back to Dashboard</a>
-
+    <a href="{{ url_for('admin_dashboard') }}">
+        <button class="back-to-dashboard">Back to Dashboard</button>
+    </a>
     <div class="container">
         <h1 class="mt-5 mb-4 text-center">Register a Doctor</h1>
         

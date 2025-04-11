@@ -90,10 +90,7 @@
     </a>
     <br>
     <div class="container">
-        
-
         <h2 class="text-center mb-4">Upload Video</h2>
-
         <div id="uploadArea" class="upload-area">
             <p>Drag Video</p>
             <video id="videoPreview" class="video-preview" controls ondblclick="document.getElementById('videoInput').click();"></video>
@@ -101,9 +98,9 @@
         <div class="controls">
             <input type="file" id="videoInput" accept="video/*" style="display: none;" onchange="fileSelected(this)">
             <button id="uploadButton" class="btn btn-primary" onclick="document.getElementById('videoInput').click();">Upload Video</button>
-            
+            <button id="saveVideoButton" class="btn btn-success hidden">Save Video</button>
             <div id="ptsdCheckContainer" class="toggle-section hidden">
-                <form id="ptsdCheckForm" method="post" action="/check_ptsd" enctype="multipart/form-data" onsubmit="showSpinner()">
+                <form id="ptsdCheckForm" method="post" action="/check_ptsd" enctype="multipart/form-data" onsubmit="return checkVideoDurationAndSubmit();">
                     <input id="hiddenFileInput" type="file" name="video" accept="video/mp4" style="display: none;">
                     <button type="submit" class="btn btn-primary">Check PTSD</button>
                 </form>
@@ -134,9 +131,12 @@
         const videoInput = document.getElementById('videoInput');
         const videoPreview = document.getElementById('videoPreview');
         const uploadButton = document.getElementById('uploadButton');
+        const saveVideoButton = document.getElementById('saveVideoButton');
         const ptsdCheckContainer = document.getElementById('ptsdCheckContainer');
         const ptsdCheckForm = document.getElementById('ptsdCheckForm');
         const hiddenFileInput = document.getElementById('hiddenFileInput');
+
+        let selectedVideoFile = null; // Variable to hold the selected video file
 
         uploadArea.addEventListener('dragover', (event) => {
             event.preventDefault();
@@ -171,17 +171,79 @@
                 videoPreview.src = fileReader.result;
                 videoPreview.style.display = 'block';
                 uploadButton.style.display = 'none';
+                saveVideoButton.style.display = 'inline-block'; // Show the "Save Video" button
                 ptsdCheckContainer.classList.remove('hidden');
                 hiddenFileInput.files = videoInput.files;
+                selectedVideoFile = file; // Store the video file reference
+
+                // Load video to check duration
+                videoPreview.load();
+                videoPreview.onloadedmetadata = function() {
+                    if (videoPreview.duration < 60) {
+                        alert("Video must be at least 60 seconds long.");
+                        ptsdCheckContainer.classList.add('hidden');
+                    }
+                };
             };
             fileReader.onerror = function () {
                 alert('Error reading file!');
             };
         }
 
+        function checkVideoDurationAndSubmit() {
+            if (videoPreview.duration < 60) {
+                alert("Can't perform action on videos less than 60 seconds long.");
+                return false; // Cancel form submission
+            }
+            showSpinner();
+            return true;
+        }
+
         function showSpinner() {
             $('#loadingModal').modal('show');
         }
+
+        // Function to handle saving video
+        function saveVideo() {
+            const videoName = prompt('Enter a name for your video:');
+            if (!videoName) {
+                alert('Please enter a video name.');
+                return;
+            }
+
+            const now = new Date();
+            const formattedDate = now.getFullYear() + "-" +
+                ("0" + (now.getMonth() + 1)).slice(-2) + "-" +
+                ("0" + now.getDate()).slice(-2) + "_" +
+                ("0" + now.getHours()).slice(-2) + "-" +
+                ("0" + now.getMinutes()).slice(-2) + "-" +
+                ("0" + now.getSeconds()).slice(-2);
+            const finalVideoName = `${videoName}_${formattedDate}.mp4`;
+
+            const formData = new FormData();
+            formData.append('video', selectedVideoFile, finalVideoName); // Use the selected video file
+            formData.append('name', videoName);
+
+            fetch('/save_video', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Video saved successfully!');
+                } else {
+                    alert('Error saving video: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while saving the video.');
+            });
+        }
+
+        // Attach event listener to "Save Video" button
+        saveVideoButton.addEventListener('click', saveVideo);
     </script>
 </body>
 </html>

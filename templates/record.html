@@ -42,6 +42,20 @@
             width: 100%;
             height: 100%;
         }
+        
+        #video {
+            transform: scaleX(-1); /* Flips the video feed horizontally */
+        }
+        #timer { /* Timer display */
+            color: white;
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-size: 24px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
         .control-buttons {
             margin-top: 20px;
         }
@@ -76,7 +90,6 @@
             display: none;
         }
         #backToDashboard {
-            
             top: 20px;
             right: 20px;
         }
@@ -104,6 +117,8 @@
         <h2>Record Video</h2>
         <div class="video-container">
             <video id="video" autoplay muted></video>
+            <video id="recordedVideo" class="hidden" controls></video>
+            <span id="timer" style="color: white; position: absolute; bottom: 20px; right: 20px; font-size: 24px; background-color: rgba(0, 0, 0, 0.5); padding: 5px 10px; border-radius: 5px;">00:00</span>
         </div>
         <div class="control-buttons">
             <button id="startRecord" class="btn-custom">Start Recording</button>
@@ -114,22 +129,37 @@
             <input type="text" id="videoName" class="form-control hidden" placeholder="Enter video name" style="margin-top: 10px;"/>
         </div>
         <div id="ptsdCheckContainer" class="toggle-section hidden">
-            <form id="ptsdCheckForm" method="post" action="/check_ptsd" enctype="multipart/form-data">
+            <form id="ptsdCheckForm" method="post" action="/check_ptsd" enctype="multipart/form-data" onsubmit="showSpinner()">
                 <input id="hiddenFileInput" type="file" name="video" accept="video/mp4" style="display: none;">
                 <button type="submit" class="btn btn-primary">Check PTSD</button>
-                <div class="spinner hidden"></div> <!-- Loading spinner -->
             </form>
         </div>
     </div>
 
+    <!-- Modal for Spinner -->
+    <div class="modal fade" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <p class="mt-3">Processing video, please wait...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', (event) => {
             let mediaRecorder;
             let recordedChunks = [];
+            let mediaStream; // Variable to store the media stream
             const video = document.getElementById('video');
+            const recordedVideo = document.getElementById('recordedVideo');
             const startRecordButton = document.getElementById('startRecord');
             const pauseRecordButton = document.getElementById('pauseRecord');
             const resumeRecordButton = document.getElementById('resumeRecord');
@@ -139,10 +169,11 @@
             const ptsdCheckContainer = document.getElementById('ptsdCheckContainer');
             const ptsdCheckForm = document.getElementById('ptsdCheckForm');
             const hiddenFileInput = document.getElementById('hiddenFileInput');
-            const spinner = document.querySelector('.spinner');
-
+            let videoDuration = 0; // Variable to store video duration
+        
             navigator.mediaDevices.getUserMedia({ video: true, audio: true })
                 .then(function (stream) {
+                    mediaStream = stream; // Store the media stream
                     video.srcObject = stream;
                     const options = { mimeType: 'video/mp4' };
                     if (MediaRecorder.isTypeSupported(options.mimeType)) {
@@ -151,64 +182,98 @@
                         console.log('MP4 format not supported, using default settings');
                         mediaRecorder = new MediaRecorder(stream);
                     }
-
+        
                     mediaRecorder.ondataavailable = function (event) {
                         if (event.data.size > 0) {
                             recordedChunks.push(event.data);
                         }
                     };
-
+        
                     mediaRecorder.onstop = function () {
                         const blob = new Blob(recordedChunks, { type: 'video/mp4' });
-                        video.src = URL.createObjectURL(blob);
+                        recordedVideo.src = URL.createObjectURL(blob);
+                        recordedVideo.addEventListener('loadedmetadata', function() {
+                            videoDuration = recordedVideo.duration; // Update duration after metadata is loaded
+                        });
+                        recordedVideo.classList.remove('hidden');
+                        video.classList.add('hidden');
                         saveVideoButton.style.display = 'inline-block';
                         videoNameInput.classList.remove('hidden');
                         ptsdCheckContainer.classList.remove('hidden');
                         hiddenFileInput.files = new DataTransfer().files;
+                        const file = new File([blob], 'recorded_video.mp4', { type: 'video/mp4' });
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        hiddenFileInput.files = dataTransfer.files;
                     };
                 }).catch(function (error) {
                     console.error('Error accessing media devices.', error);
                 });
-
+        
+            ptsdCheckForm.addEventListener('submit', function(event) {
+                if (videoDuration < 60) { // Check if video is less than 60 seconds
+                    alert("Can't perform action on less than 60-second video.");
+                    event.preventDefault(); // Prevent form submission
+                }
+            });
+        
             startRecordButton.addEventListener('click', function () {
                 recordedChunks = [];
                 mediaRecorder.start();
+                startTimer(); // Start timer when recording starts
                 startRecordButton.style.display = 'none';
                 pauseRecordButton.style.display = 'inline-block';
                 stopRecordButton.style.display = 'inline-block';
             });
-
+        
             pauseRecordButton.addEventListener('click', function () {
                 mediaRecorder.pause();
+                clearInterval(timerInterval); // Pause timer
                 pauseRecordButton.style.display = 'none';
                 resumeRecordButton.style.display = 'inline-block';
             });
-
+        
             resumeRecordButton.addEventListener('click', function () {
                 mediaRecorder.resume();
+                startTimer(); // Resume timer
                 resumeRecordButton.style.display = 'none';
                 pauseRecordButton.style.display = 'inline-block';
             });
-
+        
             stopRecordButton.addEventListener('click', function () {
                 mediaRecorder.stop();
+                stopTimer(); // Stop and reset timer
                 startRecordButton.style.display = 'inline-block';
                 pauseRecordButton.style.display = 'none';
                 resumeRecordButton.style.display = 'none';
                 stopRecordButton.style.display = 'none';
+        
+                // Stop the media stream after stopping the recording
+                if (mediaStream) {
+                    mediaStream.getTracks().forEach(track => track.stop());
+                }
             });
-
+        
             saveVideoButton.addEventListener('click', function () {
-                const blob = new Blob(recordedChunks, { type: 'video/mp4' });
                 const videoName = videoNameInput.value.trim();
-                if (videoName === '') {
+                if (!videoName) {
                     alert('Please enter a video name.');
                     return;
                 }
+                const now = new Date();
+                const formattedDate = now.getFullYear() + "-" +
+                    ("0" + (now.getMonth() + 1)).slice(-2) + "-" +
+                    ("0" + now.getDate()).slice(-2) + "_" +
+                    ("0" + now.getHours()).slice(-2) + "-" +
+                    ("0" + now.getMinutes()).slice(-2) + "-" +
+                    ("0" + now.getSeconds()).slice(-2);
+                const finalVideoName = `${videoName}_${formattedDate}`;
+                
+                const blob = new Blob(recordedChunks, { type: 'video/mp4' });
                 const formData = new FormData();
-                formData.append('video', blob, 'recorded_video.mp4');
+                formData.append('video', blob, `${finalVideoName}.mp4`);
                 formData.append('name', videoName);
-
+            
                 fetch('/save_video', {
                     method: 'POST',
                     body: formData,
@@ -218,43 +283,41 @@
                     if (data.success) {
                         alert('Video saved successfully!');
                     } else {
-                        alert('Failed to save video.');
+                        alert('Error saving video: ' + data.message);
                     }
                 })
-                .catch((error) => {
+                .catch(error => {
                     console.error('Error:', error);
-                    alert('Failed to save video.');
+                    alert('An error occurred while saving the video.');
                 });
             });
-
-            ptsdCheckForm.addEventListener('submit', function(event) {
-                event.preventDefault();
-                spinner.classList.remove('hidden'); // Show spinner
-                const formData = new FormData();
-                const videoBlob = new Blob(recordedChunks, { type: 'video/mp4' });
-                formData.append('video', videoBlob, 'recorded_video.mp4');
-
-                fetch('/check_ptsd', {
-                    method: 'POST',
-                    body: formData,
-                })
-                .then(response => response.json())
-                .then(data => {
-                    spinner.classList.add('hidden'); // Hide spinner
-                    if (data.success) {
-                        window.location.href = `/result?audio_prediction=${data.audio_prediction}&audio_score=${data.audio_score}&video_prediction=${data.video_prediction}&video_score=${data.video_score}`;
-                    } else {
-                        alert('PTSD Check failed');
-                    }
-                })
-                .catch((error) => {
-                    spinner.classList.add('hidden'); // Hide spinner
-                    console.error('Error:', error);
-                    alert('PTSD Check failed');
-                });
-            });
-
+            
+            let timerInterval; // Variable to store interval ID for the timer
+            const timerDisplay = document.getElementById('timer');
+        
+            function startTimer() {
+                let seconds = 0;
+                timerInterval = setInterval(() => {
+                    seconds++;
+                    const minutes = Math.floor(seconds / 60);
+                    const remainingSeconds = seconds % 60;
+                    timerDisplay.textContent = `${pad(minutes)}:${pad(remainingSeconds)}`;
+                }, 1000);
+            }
+        
+            function stopTimer() {
+                clearInterval(timerInterval);
+                timerDisplay.textContent = '00:00'; // Reset timer display when stopped
+            }
+        
+            function pad(value) {
+                return value.toString().padStart(2, '0');
+            }
+        
+            function showSpinner() {
+                $('#loadingModal').modal('show');
+            }
         });
-    </script>
+            </script>
 </body>
 </html>

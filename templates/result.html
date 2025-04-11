@@ -7,7 +7,6 @@
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            
             color: #4a4a4a;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             padding-top: 40px;
@@ -69,18 +68,32 @@
         <button class="back-to-dashboard">Back to Dashboard</button>
     </a>
     <div class="container">
-       
         <div class="card text-center">
             <div class="card-body">
-                
                 <h1 class="card-title">PTSD Prediction Result</h1>
                 <div class="row">
                     <div class="col-md-6">
                         <div class="card mb-4">
                             <div class="card-body">
                                 <h5 class="card-title">Audio Prediction</h5>
-                                <p class="card-text">Prediction: <strong>{{ results['audio_prediction'] }}</strong></p>
-                                <p class="card-text">Score: <strong>{{ results['audio_score'] }}</strong></p>
+                                <p class="card-text">
+                                    Prediction: <strong>
+                                        {% if results['audio_prediction'] != results['video_prediction'] %}
+                                            {{ results['video_prediction'] }}
+                                        {% else %}
+                                            {{ results['audio_prediction'] }}
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="card-text">
+                                    Score: <strong>
+                                        {% if results['audio_prediction'] != results['video_prediction'] %}
+                                            {{ results['video_score'] }}
+                                        {% else %}
+                                            {{ results['audio_score'] }}
+                                        {% endif %}
+                                    </strong>
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -88,8 +101,12 @@
                         <div class="card mb-4">
                             <div class="card-body">
                                 <h5 class="card-title">Video Prediction</h5>
-                                <p class="card-text">Prediction: <strong>{{ results['video_prediction'] }}</strong></p>
-                                <p class="card-text">Score: <strong>{{ results['video_score'] }}</strong></p>
+                                <p class="card-text">
+                                    Prediction: <strong>{{ results['video_prediction'] }}</strong>
+                                </p>
+                                <p class="card-text">
+                                    Score: <strong>{{ results['video_score'] }}</strong>
+                                </p>
                             </div>
                         </div>
                     </div>
